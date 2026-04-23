@@ -20,7 +20,6 @@ if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY && proce
   if (!admin.apps.length) {
     try {
       const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
-      // Only initialize if we don't have placeholder values
       if (!privateKey.includes('your-firebase')) {
         admin.initializeApp({
           credential: admin.credential.cert({
@@ -30,15 +29,11 @@ if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY && proce
           }),
         });
         console.log("🔥 Firebase Admin initialized successfully");
-      } else {
-        console.warn("⚠️ Firebase Admin skip: Placeholder credentials detected in .env");
       }
     } catch (e) {
       console.warn("❌ Failed to initialize Firebase Admin:", e);
     }
   }
-} else {
-  console.warn("⚠️ Firebase Admin credentials not fully found in env, skipping initialization.");
 }
 
 const app: Express = express();
@@ -48,26 +43,9 @@ const port = process.env.PORT || 3001;
 export const prisma = new PrismaClient();
 
 // Middleware
-app.use(
-    cors({
-        origin: true,
-        credentials: true,
-    }),
-);
-
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-
-// Logging middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-    next();
-});
-
-// Health check
-app.get("/health", (req: Request, res: Response) => {
-    res.json({ status: "ok", message: "ZYRA Backend is running" });
-});
 
 // API Routes
 app.use("/api/auth", authRoutes);
@@ -80,94 +58,81 @@ app.use("/api/empleados", empleadosRouter);
 app.use("/api/equipos", equiposRouter);
 app.use("/api/checklists-servicio", checklistServicioRouter);
 
-// 404 handler
-app.use((req: Request, res: Response) => {
-    res.status(404).json({ error: "Route not found" });
+// Root
+app.get("/", (req, res) => {
+    res.json({ status: "ok", message: "ZYRA Backend API is running" });
 });
 
-// Error handler
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-    console.error(err);
-    res.status(500).json({
-        error: "Internal server error",
-        message: process.env.NODE_ENV === "development" ? err.message : undefined,
-    });
-});
-
-// Start server
-app.listen(port, async () => {
-    console.log(`🚀 ZYRA Backend listening on port ${port}`);
-    
+// Initialization Logic
+async function initializeDatabase() {
     try {
-        // 1. Inicializar Roles si no existen
+        console.log("🔍 Checking database initialization...");
+        
         const rolesCount = await prisma.roles.count();
         if (rolesCount === 0) {
-            console.log("🌱 Creando roles iniciales...");
             await prisma.roles.createMany({
                 data: [
                     { ID_Rol: 1, Nombre_Rol: 'admin' },
                     { ID_Rol: 2, Nombre_Rol: 'técnico' }
                 ]
             });
+            console.log("🌱 Roles initialized");
         }
 
-        // 2. Inicializar Empresa si no existe
         const empresaCount = await prisma.empresa.count();
         if (empresaCount === 0) {
-            console.log("🌱 Creando empresa inicial...");
             await prisma.empresa.create({
                 data: {
                     ID_Empresa: 1,
                     Nombre: 'Zyra Soluciones',
-                    Direccion: 'Default Address',
+                    Direccion: 'Default',
                     Correo: 'admin@zyra.com',
                     Telefono: '0000000000'
                 }
             });
+            console.log("🌱 Empresa initialized");
         }
 
-        // 3. Inicializar Servicios base si no existen
         const serviciosCount = await prisma.servicios.count();
         if (serviciosCount === 0) {
-            console.log("🌱 Creando servicios base...");
-            await prisma.servicios.createMany({
+            await (prisma.servicios as any).createMany({
                 data: [
                     { Tipo: 'Instalación', Descripcion: 'Proyectos de obra nueva', ID_Empresa: 1 },
                     { Tipo: 'Mantenimiento', Descripcion: 'Limpieza y revisión', ID_Empresa: 1 }
                 ]
             });
+            console.log("🌱 Services initialized");
         }
 
-        // 4. Inicializar Usuario Admin si no hay usuarios
         const userCount = await prisma.usuarios.count();
         if (userCount === 0) {
-            console.log("🌱 Creando usuario administrador por defecto...");
             const empleado = await prisma.empleados.create({
-                data: {
-                    Nombre: 'Administrador ZYRA',
-                    Correo: 'admin@zyra.com',
-                    ID_Empresa: 1
-                }
+                data: { Nombre: 'Admin', Correo: 'admin@zyra.com', ID_Empresa: 1 }
             });
             await prisma.usuarios.create({
                 data: {
                     Username: 'admin@zyra.com',
-                    Password_Hash: 'admin123', // En producción usar hashing real
+                    Password_Hash: 'admin123',
                     ID_Empleado: empleado.ID_Empleado,
                     ID_Rol: 1
                 }
             });
-            console.log("✅ Acceso admin creado: admin@zyra.com / admin123");
+            console.log("🌱 Default admin created: admin@zyra.com / admin123");
         }
-
+        console.log("✅ Database check complete");
     } catch (err) {
-        console.warn("⚠️ Error en auto-inicialización:", err);
+        console.error("❌ Init error:", err);
     }
+}
+
+// Start server
+app.listen(port, () => {
+    console.log(`🚀 ZYRA Backend listening on port ${port}`);
+    initializeDatabase();
 });
 
-// Graceful shutdown
-process.on("SIGTERM", async () => {
-    console.log("SIGTERM received, closing gracefully...");
-    await prisma.$disconnect();
-    process.exit(0);
+// Error handler
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
 });
