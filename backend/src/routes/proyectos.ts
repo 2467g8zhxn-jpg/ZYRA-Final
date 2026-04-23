@@ -29,7 +29,13 @@ router.get('/:id', async (req: Request, res: Response) => {
         servicio: true,
         equipo: true,
         reportes: true,
-        checklists: true,
+        checklists: {
+          include: {
+            detalles: {
+              include: { material: true }
+            }
+          }
+        },
       },
     });
     if (!proyecto) return res.status(404).json({ error: 'Proyecto no encontrado' });
@@ -89,23 +95,68 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
       include: { cliente: true, servicio: true, equipo: true }
     });
 
-    // Si vienen materiales, creamos el checklist inicial automáticamente
+    // Si vienen materiales (formato antiguo/relacional), sincronizamos el checklist
     if (materiales && materiales.length > 0) {
-      const checklist = await prisma.checklist.create({
-        data: {
-          ID_Proyecto: proyecto.ID_Proyecto,
-          Estado: 'Pendiente',
-          detalles: {
-            create: materiales.map((m: any) => ({
-              ID_Material: m.ID_Material,
-              Cantidad_Requerida: m.quantity || m.Cantidad_Requerida,
-              Cantidad_Cargada: 0,
-              Marcado: false
-            }))
-          }
-        }
+      // Buscar si ya tiene un checklist
+      const existingChecklist = await prisma.checklist.findFirst({
+        where: { ID_Proyecto: proyecto.ID_Proyecto }
       });
-      console.log(`Checklist inicial creado para proyecto ${proyecto.ID_Proyecto}`);
+
+      if (existingChecklist) {
+        // Sincronizar detalles (borrar y crear es lo más limpio para una plantilla)
+        await prisma.checklist_Detalle.deleteMany({
+          where: { ID_Checklist: existingChecklist.ID_Checklist }
+        });
+
+        await prisma.checklist_Detalle.createMany({
+          data: materiales.map((m: any) => ({
+            ID_Checklist: existingChecklist.ID_Checklist,
+            ID_Material: m.ID_Material,
+            Cantidad_Requerida: m.quantity || m.Cantidad_Requerida,
+            Cantidad_Cargada: m.takenQuantity || m.Cantidad_Cargada || 0,
+            Marcado: m.done || m.Marcado || false
+          }))
+        });
+      } else {
+        await prisma.checklist.create({
+          data: {
+            ID_Proyecto: proyecto.ID_Proyecto,
+            Estado: 'Pendiente',
+            detalles: {
+              create: materiales.map((m: any) => ({
+                ID_Material: m.ID_Material,
+                Cantidad_Requerida: m.quantity || m.Cantidad_Requerida,
+                Cantidad_Cargada: m.takenQuantity || 0,
+                Marcado: m.done || false
+              }))
+            }
+          }
+        });
+      }
+    }
+
+    // Soporte para el campo 'projectMaterials' que envía el frontend
+    const { projectMaterials } = req.body;
+    if (projectMaterials && projectMaterials.length > 0) {
+       const existingChecklist = await prisma.checklist.findFirst({
+        where: { ID_Proyecto: proyecto.ID_Proyecto }
+      });
+
+      if (existingChecklist) {
+        await prisma.checklist_Detalle.deleteMany({
+          where: { ID_Checklist: existingChecklist.ID_Checklist }
+        });
+
+        await prisma.checklist_Detalle.createMany({
+          data: projectMaterials.map((m: any) => ({
+            ID_Checklist: existingChecklist.ID_Checklist,
+            ID_Material: m.ID_Material,
+            Cantidad_Requerida: m.quantity || m.Cantidad_Requerida,
+            Cantidad_Cargada: m.takenQuantity || m.Cantidad_Cargada || 0,
+            Marcado: m.done || m.Marcado || false
+          }))
+        });
+      }
     }
 
     // ── GAMIFICACION: puntos al finalizar proyecto ──────────────────────

@@ -606,8 +606,21 @@ export default function ProjectsPage() {
                           }
                         }
 
-                        let mRaw = project.projectMaterials || [];
-                        let mats = Array.isArray(mRaw) ? mRaw : (typeof mRaw === 'string' ? JSON.parse(mRaw) : []);
+                        // Intentar cargar desde el checklist relacional de SQL
+                        let mats: any[] = [];
+                        if (project.checklists && project.checklists.length > 0) {
+                          const mainChecklist = project.checklists[0];
+                          if (mainChecklist.detalles && mainChecklist.detalles.length > 0) {
+                            mats = mainChecklist.detalles.map((d: any) => ({
+                              ID_Material: d.ID_Material,
+                              name: d.material?.Nombre_Material || "Material",
+                              quantity: d.Cantidad_Requerida || 1,
+                              done: d.Marcado || false,
+                              takenQuantity: d.Cantidad_Cargada || d.Cantidad_Requerida || 1,
+                              Stock_Disponible: d.material?.Stock_Disponible || 100
+                            }));
+                          }
+                        }
 
                         // Si no hay reportes, reseteamos el checklist para empezar de cero
                         if (projectReports.length === 0) {

@@ -28,14 +28,14 @@ async function apiRequest<T>(
     throw new Error('OFFLINE_SAVED');
   }
   
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(fetchOptions.headers || {}),
+    ...(fetchOptions.headers as any || {}),
   };
   const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('zyra_token') : null);
 
   if (authToken) {
-    headers.Authorization = `Bearer ${authToken}`;
+    headers['Authorization'] = `Bearer ${authToken}`;
   }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
