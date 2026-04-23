@@ -53,11 +53,11 @@ async function main() {
     });
   }
 
-  const existingAdminUser = await prisma.usuarios.findFirst({ where: { Username: 'Admin' } });
+  const existingAdminUser = await prisma.usuarios.findFirst({ where: { Username: 'admin@zyra.com' } });
   if (!existingAdminUser) {
     await prisma.usuarios.create({
       data: {
-        Username: 'Admin',
+        Username: 'admin@zyra.com',
         Password_Hash: 'admin123',
         ID_Empleado: adminEmpleado.ID_Empleado,
         ID_Rol: adminRol.ID_Rol,
