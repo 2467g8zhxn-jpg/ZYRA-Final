@@ -149,22 +149,25 @@ function ReportsContent() {
     try {
       await reportesAPI.update(reportId, { estado: newStatus });
 
-      if (newStatus === "Aprobado" && selectedReport && selectedReport.ID_Proyecto) {
+      // Buscar el reporte en la lista para tener los datos frescos (ID_Proyecto, ID_Empleado)
+      const report = sqlReports.find(r => r.ID_Reporte.toString() === reportId.toString());
+
+      if (newStatus === "Aprobado" && report && report.ID_Proyecto) {
          try {
-            await projectsAPI.update(selectedReport.ID_Proyecto.toString(), {
+            await projectsAPI.update(report.ID_Proyecto.toString(), {
               Estado: "Finalizado",
               Progreso: 100,
               Fecha_Fin: new Date().toISOString()
             });
 
             // Dar medallas/puntos al empleado que hizo el reporte
-            if (selectedReport.ID_Empleado) {
-              await recordAction(selectedReport.ID_Empleado.toString(), "PROJECT_COMPLETED");
+            if (report.ID_Empleado) {
+              await recordAction(report.ID_Empleado.toString(), "PROJECT_COMPLETED");
             }
          } catch(e) {
             console.error("Error updating project / gamification:", e);
          }
-      } else if (newStatus === "Rechazado" && selectedReport && selectedReport.ID_Proyecto) {
+      } else if (newStatus === "Rechazado" && report && report.ID_Proyecto) {
          try {
             await projectsAPI.update(selectedReport.ID_Proyecto.toString(), {
               Estado: "Rechazado"

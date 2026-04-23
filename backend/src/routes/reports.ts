@@ -20,6 +20,7 @@ router.get('/', async (req: Request, res: Response) => {
             include: {
                 proyecto: true,
                 equipo: true,
+                empleado: true
             },
             orderBy: {
                 Fecha_Reporte: 'desc',
@@ -44,6 +45,7 @@ router.get('/:id', async (req: Request, res: Response) => {
             include: {
                 proyecto: true,
                 equipo: true,
+                empleado: true
             },
         });
 
@@ -62,7 +64,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // ─────────────────────────────────────────────────
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
     try {
-        const { ID_Proyecto, ID_Equipo, Comentarios, Evidencias_URL, estado = 'Pendiente' } = req.body;
+        const { ID_Proyecto, ID_Equipo, Comentarios, Evidencias_URL, ID_Empleado, estado = 'Pendiente' } = req.body;
 
         if (!ID_Proyecto && !ID_Equipo) {
             return res.status(400).json({ error: 'ID_Proyecto o ID_Equipo son requeridos' });
@@ -75,10 +77,12 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
                 Comentarios,
                 Evidencias_URL,
                 estado,
+                ID_Empleado: ID_Empleado ? parseInt(ID_Empleado) : null,
             },
             include: {
                 proyecto: true,
                 equipo: true,
+                empleado: true
             },
         });
 
@@ -107,6 +111,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
             include: {
                 proyecto: true,
                 equipo: true,
+                empleado: true
             },
         });
 
