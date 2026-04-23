@@ -358,6 +358,20 @@ export default function ProjectsPage() {
         });
       } else {
         // CREATE new report
+        // Buscar ID_Empleado real (SQL) antes de crear
+        let sqlEmployeeId = profile.ID_Empleado;
+        if (!sqlEmployeeId) {
+          try {
+            const allEmps = await employeesAPI.getAll();
+            const myEmp = allEmps.find((e: any) => 
+              e.usuario?.FirebaseUID === profile?.uid || 
+              e.usuario?.Username?.toLowerCase() === profile?.email?.toLowerCase() ||
+              e.Nombre?.toLowerCase().includes(profile?.displayName?.toLowerCase() || "")
+            );
+            if (myEmp) sqlEmployeeId = myEmp.ID_Empleado;
+          } catch (e) { console.warn("Error buscando ID SQL", e); }
+        }
+
         const baseReportData = {
           ID_Proyecto: parseInt(project.ID_Proyecto.toString()),
           ID_Equipo: project.ID_Equipo ? parseInt(project.ID_Equipo.toString()) : null,
@@ -365,7 +379,7 @@ export default function ProjectsPage() {
           estado: "Pendiente",
           Fecha_Reporte: new Date().toISOString(),
           Evidencias_URL: reportPhotos.length > 0 ? reportPhotos[0].dataUrl : "", 
-          ID_Empleado: profile.ID_Empleado || profile.id
+          ID_Empleado: sqlEmployeeId ? parseInt(sqlEmployeeId.toString()) : null
         };
         const createdReport = await reportesAPI.create(baseReportData);
         

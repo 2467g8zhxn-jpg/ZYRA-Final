@@ -404,9 +404,22 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
     <div className="space-y-6 max-w-7xl mx-auto font-body">
       {/* Header */}
       <div>
-        <h2 className="text-3xl font-black tracking-tight text-foreground">
-          ¡Hola, <span className="text-accent">{nombre.split(" ")[0]}</span>! 👋
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-black tracking-tight text-foreground">
+            ¡Hola, <span className="text-accent">{nombre.split(" ")[0]}</span>! 👋
+          </h2>
+          <button 
+            onClick={async () => {
+              if (empleadoData?.ID_Empleado) {
+                await recordAction(empleadoData.ID_Empleado, "REPORT_SENT");
+                window.location.reload();
+              }
+            }}
+            className="text-[10px] bg-accent/10 text-accent px-3 py-1 rounded-full font-black uppercase tracking-widest hover:bg-accent/20 transition-all"
+          >
+            Sincronizar Puntos 🔄
+          </button>
+        </div>
         <p className="text-sm text-muted-foreground mt-1">Tu progreso y actividad reciente.</p>
       </div>
 
