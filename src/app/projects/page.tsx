@@ -504,8 +504,16 @@ export default function ProjectsPage() {
             const hasPendingReport = projectReports.some(r => r.estado === 'Pendiente');
             const hasRejectedReport = projectReports.some(r => r.estado === 'Rechazado');
             
-            // Prioridad: Si hay reporte pendiente -> En Revisión. Si hay rechazado -> Corregir. Si no -> Estado del proyecto.
-            const displayStatus = hasPendingReport ? 'EnRevision' : (hasRejectedReport ? 'Rechazado' : (project.Estado || 'Pendiente'));
+            // Prioridad: Si hay reporte pendiente -> En Revisión. Si hay rechazado -> Corregir. 
+            // Si el estado dice EnRevision pero NO hay reporte pendiente, lo tratamos como EnProceso (seguro)
+            let displayStatus = project.Estado || 'Pendiente';
+            if (hasPendingReport) {
+              displayStatus = 'EnRevision';
+            } else if (hasRejectedReport) {
+              displayStatus = 'Rechazado';
+            } else if (displayStatus === 'EnRevision') {
+              displayStatus = 'EnProceso'; // ← Seguro para desbloquear proyectos sin reportes
+            }
             
             const isEnCurso = displayStatus === 'EnProceso' || displayStatus === 'Rechazado';
             const assignedTeam = sqlTeams.find(t => t.ID_Equipo === project.ID_Equipo);
