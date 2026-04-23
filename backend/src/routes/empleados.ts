@@ -118,8 +118,8 @@ router.post('/:id/puntos', async (req: Request, res: Response) => {
                 ID_Empleado: parseInt(id),
                 Cantidad_Puntos: parseInt(puntos),
                 Motivo: motivo || 'Acción',
-                ID_Proyecto: projectId ? parseInt(projectId) : null,
-                ID_Reporte: reportId ? parseInt(reportId) : null,
+                ID_Proyecto: (projectId && !isNaN(parseInt(projectId))) ? parseInt(projectId) : null,
+                ID_Reporte: (reportId && !isNaN(parseInt(reportId))) ? parseInt(reportId) : null,
             }
         });
 
