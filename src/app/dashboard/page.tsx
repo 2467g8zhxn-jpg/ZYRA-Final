@@ -563,22 +563,20 @@ export default function DashboardPage() {
         } else {
           // For operators: load their own employee record (with puntos)
           try {
-            const allEmpleados = await employeesAPI.getAll();
-            const myRecord = Array.isArray(allEmpleados)
-              ? allEmpleados.find((e: any) => {
-                const sqlName = e.Nombre?.toLowerCase() || "";
-                const fbName = profile?.displayName?.toLowerCase() || "";
-                const sqlUser = e.usuario?.Username?.toLowerCase() || "";
-                const fbEmail = profile?.email?.toLowerCase() || "";
-
-                return String(e.ID_Empleado) === String(profile?.ID_Empleado) ||
-                  String(e.ID_Empleado) === String(profile?.id) ||
-                  (fbName && sqlName.includes(fbName)) ||
-                  (fbEmail && sqlUser.includes(fbEmail.split('@')[0])) ||
-                  (fbEmail === sqlUser);
-              })
-              : null;
-            setEmpleadoData(myRecord || null);
+            // Si tenemos empleadoId directo del login, usarlo (más fiable)
+            if (profile?.empleadoId) {
+              const empData = await employeesAPI.getById(profile.empleadoId);
+              setEmpleadoData(empData || null);
+            } else {
+              // Fallback: buscar por email (Username en SQL)
+              const allEmpleados = await employeesAPI.getAll();
+              const myRecord = Array.isArray(allEmpleados)
+                ? allEmpleados.find((e: any) =>
+                    e.usuario?.Username?.toLowerCase() === (profile?.email || "").toLowerCase()
+                  )
+                : null;
+              setEmpleadoData(myRecord || null);
+            }
           } catch (e) {
             console.warn("Could not load employee record", e);
           }

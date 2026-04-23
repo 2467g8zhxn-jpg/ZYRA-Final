@@ -68,7 +68,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'ID_Proyecto o ID_Equipo son requeridos' });
         }
 
-        const empId = ID_Empleado ? parseInt(ID_Empleado) : null;
+        const empId = (ID_Empleado && !isNaN(parseInt(ID_Empleado))) ? parseInt(ID_Empleado) : null;
 
         const report = await prisma.reportes.create({
             data: {
@@ -85,6 +85,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
         });
 
         res.status(201).json(report);
+
     } catch (error) {
         errorHandler(error, req, res, () => { });
     }

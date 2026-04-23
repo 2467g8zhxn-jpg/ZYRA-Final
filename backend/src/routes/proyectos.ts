@@ -57,7 +57,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
         ID_Equipo: ID_Equipo ? parseInt(ID_Equipo) : null,
         Fecha_Inicio: Fecha_Inicio ? new Date(Fecha_Inicio) : null,
         Fecha_Fin: Fecha_Fin ? new Date(Fecha_Fin) : null,
-        Estado: Estado || 'Planificación',
+        Estado: Estado || 'Planificacion',
         Imagen_Url: Imagen_Url || null,
         Ubicacion: Ubicacion || null,
       },
@@ -105,7 +105,37 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
           }
         }
       });
-      console.log(`✅ Checklist inicial creado para proyecto ${proyecto.ID_Proyecto}`);
+      console.log(`Checklist inicial creado para proyecto ${proyecto.ID_Proyecto}`);
+    }
+
+    // ── GAMIFICACION: puntos al finalizar proyecto ──────────────────────
+    if (Estado === 'Finalizado') {
+      try {
+        const proyectoConEquipo = await prisma.proyectos.findUnique({
+          where: { ID_Proyecto: parseInt(req.params.id) },
+          include: {
+            equipo: { include: { empleados: true } }
+          }
+        });
+        const miembros = proyectoConEquipo?.equipo?.empleados || [];
+        console.log(`[GAMIFICACION] Finalizando proyecto. Otorgando puntos a ${miembros.length} miembro(s)`);
+
+        for (const miembro of miembros) {
+          if (!miembro.ID_Empleado) continue;
+          await prisma.puntos_Historial.create({
+            data: {
+              ID_Empleado: miembro.ID_Empleado,
+              Cantidad_Puntos: 50,
+              Motivo: `Proyecto Finalizado: ${proyectoConEquipo?.Nombre_Proyecto || ''}`,
+              ID_Proyecto: parseInt(req.params.id),
+              Fecha_Asignacion: new Date()
+            }
+          });
+          console.log(`[GAMIFICACION] 100 pts -> empleado ${miembro.ID_Empleado}`);
+        }
+      } catch (gamErr) {
+        console.error('[GAMIFICACION] Error otorgando puntos:', gamErr);
+      }
     }
 
     res.json(proyecto);
