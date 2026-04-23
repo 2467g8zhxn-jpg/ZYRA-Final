@@ -22,3 +22,7 @@ export const getRankByPoints = (points: number) => {
   if (points >= 200) return "Avanzado";
   return "Iniciante";
 };
+
+export const calcLevel = (points: number): number => {
+  return Math.max(1, Math.floor(points / 200) + 1);
+};

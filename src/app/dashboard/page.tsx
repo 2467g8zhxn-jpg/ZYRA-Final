@@ -333,11 +333,10 @@ function AdminDashboard({ proyectos, reportes, empleados, materiales }: any) {
 // ─────────────────────────────────────────────────
 // EMPLOYEE DASHBOARD
 // ─────────────────────────────────────────────────
-function EmployeeDashboard({ profile, reportes }: any) {
-  const puntos   = profile?.puntos  || 0;
+function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
+  const puntos   = empleadoData?.puntos?.reduce((s: number, p: any) => s + (p.Cantidad_Puntos || 0), 0) || 0;
   const nivel    = calcLevel(puntos);
-  const racha    = profile?.racha   || 0;
-  const logros   = profile?.logros  || [];
+  const logros: any[] = [];
   const targetPts = nivel * 200;
   const pct      = Math.min(((puntos % 200) / 200) * 100, 100);
 
@@ -371,14 +370,14 @@ function EmployeeDashboard({ profile, reportes }: any) {
       .slice(0, 8);
   }, [reportes]);
 
-  const completedLogros = logros.filter((l: any) => l.completado);
+  const nombre = empleadoData?.Nombre || profile?.displayName || "Técnico";
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-body">
       {/* Header */}
       <div>
         <h2 className="text-3xl font-black tracking-tight text-foreground">
-          ¡Hola, <span className="text-accent">{profile?.nombre?.split(" ")[0] || "Técnico"}</span>! 👋
+          ¡Hola, <span className="text-accent">{nombre.split(" ")[0]}</span>! 👋
         </h2>
         <p className="text-sm text-muted-foreground mt-1">Tu progreso y actividad reciente.</p>
       </div>
@@ -409,22 +408,22 @@ function EmployeeDashboard({ profile, reportes }: any) {
           <div className="p-3 rounded-full bg-orange-500/10 mb-2">
             <Flame className="h-6 w-6 text-orange-400" />
           </div>
-          <p className="text-3xl font-black text-foreground">{racha}</p>
-          <p className="text-[9px] font-black uppercase tracking-widest text-orange-400 mt-0.5">Días de Racha</p>
+          <p className="text-3xl font-black text-foreground">{reportes?.length || 0}</p>
+          <p className="text-[9px] font-black uppercase tracking-widest text-orange-400 mt-0.5">Reportes</p>
         </Card>
 
         <Card className="border-border bg-card flex flex-col items-center justify-center p-5">
           <div className="p-3 rounded-full bg-yellow-500/10 mb-2">
             <Trophy className="h-6 w-6 text-yellow-400" />
           </div>
-          <p className="text-3xl font-black text-foreground">{completedLogros.length}</p>
-          <p className="text-[9px] font-black uppercase tracking-widest text-yellow-400 mt-0.5">Logros</p>
+          <p className="text-3xl font-black text-foreground">{puntos}</p>
+          <p className="text-[9px] font-black uppercase tracking-widest text-yellow-400 mt-0.5">Puntos</p>
         </Card>
       </div>
 
       {/* Medals + History */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Medals */}
+        {/* Medals placeholder */}
         <Card className="border-border">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
@@ -432,39 +431,10 @@ function EmployeeDashboard({ profile, reportes }: any) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {logros.length === 0 ? (
-              <div className="flex flex-col items-center py-8 gap-2">
-                <Shield className="h-10 w-10 text-muted-foreground/20" />
-                <p className="text-xs text-muted-foreground font-bold">Completa proyectos para ganar medallas</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {logros.map((logro: any) => {
-                  const done = logro.completado;
-                  const icon = logro.emoji || "⭐";
-                  const label = logro.nombre || logro.id || "Logro";
-                  return (
-                    <div
-                      key={logro.id}
-                      className={cn(
-                        "flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all",
-                        done
-                          ? "bg-accent/10 border-accent/30 text-accent"
-                          : "bg-muted/10 border-border grayscale opacity-30"
-                      )}
-                    >
-                      <span className="text-3xl">{icon}</span>
-                      <div className="text-center">
-                        <p className={cn("text-[10px] font-black uppercase tracking-widest", done ? "text-foreground" : "text-muted-foreground")}>
-                          {label}
-                        </p>
-                        {done && <span className="text-[8px] text-accent font-bold uppercase">Obtenida</span>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <div className="flex flex-col items-center py-8 gap-2">
+              <Shield className="h-10 w-10 text-muted-foreground/20" />
+              <p className="text-xs text-muted-foreground font-bold">Completa proyectos para ganar medallas</p>
+            </div>
           </CardContent>
         </Card>
 
@@ -516,6 +486,7 @@ export default function DashboardPage() {
   const [reportes, setReportes] = useState<any[]>([]);
   const [empleados, setEmpleados] = useState<any[]>([]);
   const [materiales, setMateriales] = useState<any[]>([]);
+  const [empleadoData, setEmpleadoData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -526,11 +497,9 @@ export default function DashboardPage() {
       try {
         setIsLoading(true);
         
-        // Load reportes (all if admin, filtered if employee)
         const reportesData = await reportsAPI.getAll();
         setReportes(Array.isArray(reportesData) ? reportesData : []);
 
-        // Load proyectos only if admin
         if (isAdmin) {
           const proyectosData = await projectsAPI.getAll();
           setProyectos(Array.isArray(proyectosData) ? proyectosData : []);
@@ -540,6 +509,20 @@ export default function DashboardPage() {
           
           const materialesData = await materialsAPI.getAll();
           setMateriales(Array.isArray(materialesData) ? materialesData : []);
+        } else {
+          // For operators: load their own employee record (with puntos)
+          try {
+            const allEmpleados = await employeesAPI.getAll();
+            const myRecord = Array.isArray(allEmpleados)
+              ? allEmpleados.find((e: any) =>
+                  e.Nombre?.toLowerCase() === profile?.displayName?.toLowerCase() ||
+                  e.usuario?.Username === profile?.email
+                )
+              : null;
+            setEmpleadoData(myRecord || null);
+          } catch (e) {
+            console.warn("Could not load employee record", e);
+          }
         }
       } catch (error: any) {
         console.error('Error loading dashboard data:', error);
@@ -570,5 +553,6 @@ export default function DashboardPage() {
     return <AdminDashboard proyectos={proyectos} reportes={reportes} empleados={empleados} materiales={materiales} />;
   }
 
-  return <EmployeeDashboard profile={profile} reportes={reportes} />;
+  return <EmployeeDashboard profile={profile} reportes={reportes} empleadoData={empleadoData} />;
 }
+
