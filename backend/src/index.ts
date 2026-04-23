@@ -98,21 +98,70 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 app.listen(port, async () => {
     console.log(`🚀 ZYRA Backend listening on port ${port}`);
     
-    // Inicialización automática de servicios base si no existen
     try {
-        const count = await prisma.servicios.count();
-        if (count === 0) {
-            console.log("🌱 Inicializando servicios por defecto...");
+        // 1. Inicializar Roles si no existen
+        const rolesCount = await prisma.roles.count();
+        if (rolesCount === 0) {
+            console.log("🌱 Creando roles iniciales...");
+            await prisma.roles.createMany({
+                data: [
+                    { ID_Rol: 1, Nombre_Rol: 'admin' },
+                    { ID_Rol: 2, Nombre_Rol: 'técnico' }
+                ]
+            });
+        }
+
+        // 2. Inicializar Empresa si no existe
+        const empresaCount = await prisma.empresa.count();
+        if (empresaCount === 0) {
+            console.log("🌱 Creando empresa inicial...");
+            await prisma.empresa.create({
+                data: {
+                    ID_Empresa: 1,
+                    Nombre: 'Zyra Soluciones',
+                    Direccion: 'Default Address',
+                    Correo: 'admin@zyra.com',
+                    Telefono: '0000000000'
+                }
+            });
+        }
+
+        // 3. Inicializar Servicios base si no existen
+        const serviciosCount = await prisma.servicios.count();
+        if (serviciosCount === 0) {
+            console.log("🌱 Creando servicios base...");
             await prisma.servicios.createMany({
                 data: [
                     { Tipo: 'Instalación', Descripcion: 'Proyectos de obra nueva', ID_Empresa: 1 },
                     { Tipo: 'Mantenimiento', Descripcion: 'Limpieza y revisión', ID_Empresa: 1 }
                 ]
             });
-            console.log("✅ Servicios base creados.");
         }
+
+        // 4. Inicializar Usuario Admin si no hay usuarios
+        const userCount = await prisma.usuarios.count();
+        if (userCount === 0) {
+            console.log("🌱 Creando usuario administrador por defecto...");
+            const empleado = await prisma.empleados.create({
+                data: {
+                    Nombre: 'Administrador ZYRA',
+                    Correo: 'admin@zyra.com',
+                    ID_Empresa: 1
+                }
+            });
+            await prisma.usuarios.create({
+                data: {
+                    Username: 'admin@zyra.com',
+                    Password_Hash: 'admin123', // En producción usar hashing real
+                    ID_Empleado: empleado.ID_Empleado,
+                    ID_Rol: 1
+                }
+            });
+            console.log("✅ Acceso admin creado: admin@zyra.com / admin123");
+        }
+
     } catch (err) {
-        console.warn("⚠️ No se pudo inicializar los servicios base (esto es normal si la tabla ya tiene datos o la empresa no existe aún).");
+        console.warn("⚠️ Error en auto-inicialización:", err);
     }
 });
 
