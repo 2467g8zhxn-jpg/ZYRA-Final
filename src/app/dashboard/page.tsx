@@ -542,10 +542,10 @@ export default function DashboardPage() {
             const allEmpleados = await employeesAPI.getAll();
             const myRecord = Array.isArray(allEmpleados)
               ? allEmpleados.find((e: any) =>
-                  e.ID_Empleado === profile?.ID_Empleado ||
-                  e.ID_Empleado === profile?.id ||
+                  String(e.ID_Empleado) === String(profile?.ID_Empleado) ||
+                  String(e.ID_Empleado) === String(profile?.id) ||
                   e.Nombre?.toLowerCase() === profile?.displayName?.toLowerCase() ||
-                  e.usuario?.Username === profile?.email
+                  e.usuario?.Username?.toLowerCase() === profile?.email?.toLowerCase()
                 )
               : null;
             setEmpleadoData(myRecord || null);
