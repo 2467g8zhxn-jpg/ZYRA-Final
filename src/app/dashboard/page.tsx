@@ -382,7 +382,6 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
         type: "points" as const,
         label: `✨ ${p.Motivo || "Acción premiada"}`,
         sub: p.ID_Proyecto ? `Proyecto #${p.ID_Proyecto}` : "Actividad general",
-        date: p.Fecha_Asignacion,
         pts: `+${p.Cantidad_Puntos} pts`,
         color: "text-emerald-400",
       }));
@@ -400,9 +399,7 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
         color: r.estado === "Aprobado" ? "text-emerald-400" : r.estado === "Rechazado" ? "text-red-400" : "text-yellow-400",
       }));
 
-    // Solo mostrar historial real de Puntos_Historial (no reportes sin puntos)
     return [...ptsHistory]
-      .sort((a: any, b: any) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
       .slice(0, 8);
   }, [empleadoData, reportes]);
 
@@ -513,9 +510,7 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
                     </div>
                     <div className="text-right shrink-0">
                       {item.pts && <p className="text-[9px] font-black text-emerald-400">{item.pts}</p>}
-                      <p className="text-[9px] text-muted-foreground">
-                        {item.date ? format(new Date(item.date), "dd MMM", { locale: es }) : "—"}
-                      </p>
+                      {/* Fecha removida por requerimiento */}
                     </div>
                   </div>
                 ))}
