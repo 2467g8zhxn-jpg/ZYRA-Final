@@ -548,17 +548,29 @@ export default function ProjectsPage() {
                               <div className="space-y-6">
                                 <Label className="text-xs font-bold uppercase text-emerald-500">1. Lista de Materiales</Label>
                                 <div className="grid gap-2">
-                                  {opProjectMaterials.length > 0 ? opProjectMaterials.map((mat, idx) => (
-                                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border">
-                                      <div className="flex items-center gap-3">
-                                        <Checkbox checked={mat.done} onCheckedChange={() => handleToggleOpMaterial(project, idx)} />
-                                        <div className="text-sm font-bold">{mat.name} <span className="text-[10px] text-muted-foreground block">Req: {mat.quantity}</span></div>
+                                  {opProjectMaterials.length > 0 ? opProjectMaterials.map((mat, idx) => {
+                                    const isShort = (mat.takenQuantity || 0) < mat.quantity;
+                                    return (
+                                      <div key={idx} className={cn("flex flex-col p-3 rounded-lg border", isShort ? "bg-red-500/10 border-red-500/30" : "bg-muted/30")}>
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-3">
+                                            <Checkbox checked={mat.done && !isShort} onCheckedChange={() => !isShort && handleToggleOpMaterial(project, idx)} disabled={isShort} />
+                                            <div className="text-sm font-bold">{mat.name} <span className="text-[10px] text-muted-foreground block">Req: {mat.quantity}</span></div>
+                                          </div>
+                                          <Input type="number" className={cn("w-16 h-8 text-center", isShort && "border-red-500 text-red-500")} value={mat.takenQuantity === undefined ? 0 : mat.takenQuantity} onChange={(e) => handleUpdateOpMaterialQuantity(project, idx, parseInt(e.target.value) || 0)} />
+                                        </div>
+                                        {isShort && <span className="text-[10px] font-bold text-red-500 mt-2">La cantidad no puede ser menor a {mat.quantity}</span>}
                                       </div>
-                                      <Input type="number" className="w-16 h-8 text-center" value={mat.takenQuantity || 0} onChange={(e) => handleUpdateOpMaterialQuantity(project, idx, parseInt(e.target.value) || 0)} />
-                                    </div>
-                                  )) : <p className="text-center text-muted-foreground py-4">No hay materiales.</p>}
+                                    );
+                                  }) : <p className="text-center text-muted-foreground py-4">No hay materiales.</p>}
                                 </div>
-                                <Button onClick={() => handleStartDay(project)} className="w-full h-12 bg-accent text-white font-bold" disabled={opProjectMaterials.length > 0 && !opProjectMaterials.every(m => m.done)}>CONFIRMAR E INICIAR JORNADA</Button>
+                                <Button 
+                                  onClick={() => handleStartDay(project)} 
+                                  className="w-full h-12 bg-accent text-white font-bold" 
+                                  disabled={opProjectMaterials.length > 0 && (!opProjectMaterials.every(m => m.done) || opProjectMaterials.some(m => (m.takenQuantity || 0) < m.quantity))}
+                                >
+                                  CONFIRMAR E INICIAR JORNADA
+                                </Button>
                               </div>
                             ) : (
                               <div className="space-y-6">

@@ -24,7 +24,9 @@ import {
   Trash2,
   Loader2,
   Download,
-  Eye
+  Eye,
+  Camera,
+  Edit3
 } from "lucide-react";
 import DashboardLayout from "../dashboard/layout";
 import { format, isValid } from "date-fns";
@@ -76,6 +78,12 @@ function ReportsContent() {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  
+  // Edit State
+  const [editMode, setEditMode] = useState(false);
+  const [editComentarios, setEditComentarios] = useState("");
+  const [editPhoto, setEditPhoto] = useState<{name: string, dataUrl: string} | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Queries
   const [sqlReports, setSqlReports] = useState<any[]>([]);
@@ -146,6 +154,49 @@ function ReportsContent() {
       loadSqlData();
     } catch (e: any) {
       toast({ variant: "destructive", title: t.common.error });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedReportId && selectedReport) {
+      setEditMode(false);
+      setEditComentarios(selectedReport.Comentarios || "");
+      setEditPhoto(null);
+    }
+  }, [selectedReportId, selectedReport]);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setEditPhoto({ name: file.name, dataUrl: event.target.result as string });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleResubmitReport = async () => {
+    if (!selectedReportId) return;
+    setProcessingId(selectedReportId);
+    try {
+      const payload: any = {
+        Comentarios: editComentarios,
+        estado: "Pendiente"
+      };
+      if (editPhoto) {
+        payload.Evidencias_URL = editPhoto.dataUrl;
+      }
+      await reportesAPI.update(selectedReportId, payload);
+      toast({ title: t.common.success, description: "Reporte reenviado exitosamente." });
+      setEditMode(false);
+      setSelectedReportId(null);
+      loadSqlData();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message });
     } finally {
       setProcessingId(null);
     }
@@ -335,12 +386,30 @@ function ReportsContent() {
                 {/* Report Content */}
                 <div className="bg-muted/30 p-4 rounded-xl border border-border">
                   <h4 className="text-xs font-bold uppercase text-accent mb-3">{t.reports.description}</h4>
-                  <p className="text-sm leading-relaxed">{selectedReport.Comentarios || "-"}</p>
+                  {editMode ? (
+                    <Textarea 
+                      value={editComentarios} 
+                      onChange={(e) => setEditComentarios(e.target.value)} 
+                      className="min-h-[100px]"
+                    />
+                  ) : (
+                    <p className="text-sm leading-relaxed">{selectedReport.Comentarios || "-"}</p>
+                  )}
                 </div>
 
                 {/* Potentially multiple photos or single URL */}
-                <div className="relative aspect-video rounded-xl overflow-hidden border border-border shadow-inner">
-                  <Image src={selectedReport.Evidencias_URL || "https://picsum.photos/seed/solar-report/800/600"} alt="" fill className="object-cover" />
+                <div className="space-y-2">
+                  <div className="relative aspect-video rounded-xl overflow-hidden border border-border shadow-inner">
+                    <Image src={editPhoto?.dataUrl || selectedReport.Evidencias_URL || "https://picsum.photos/seed/solar-report/800/600"} alt="" fill className="object-cover" />
+                  </div>
+                  {editMode && (
+                    <div className="flex justify-end">
+                      <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+                      <Button variant="outline" size="sm" onClick={() => photoInputRef.current?.click()}>
+                        <Camera className="h-4 w-4 mr-2" /> Cambiar Foto
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Metadata footer */}
@@ -357,6 +426,25 @@ function ReportsContent() {
                   <div className="flex gap-3 pt-4 border-t border-border">
                     <Button className="flex-1 bg-emerald-500 hover:bg-emerald-600 font-bold" onClick={() => handleUpdateStatus(selectedReport.ID_Reporte.toString(), "Aprobado")}>{t.reports.approve_btn}</Button>
                     <Button variant="destructive" className="flex-1 font-bold" onClick={() => handleUpdateStatus(selectedReport.ID_Reporte.toString(), "Rechazado")}>{t.reports.reject_btn}</Button>
+                  </div>
+                )}
+
+                {/* Operator Edit/Resubmit for Rejected Reports */}
+                {!isAdmin && selectedReport.estado === "Rechazado" && (
+                  <div className="pt-4 border-t border-border flex flex-col gap-3">
+                    {editMode ? (
+                      <div className="flex gap-3">
+                        <Button variant="outline" className="flex-1" onClick={() => setEditMode(false)}>Cancelar</Button>
+                        <Button className="flex-1 bg-accent hover:bg-accent/90 text-white font-bold" onClick={handleResubmitReport} disabled={processingId === selectedReportId}>
+                          {processingId === selectedReportId ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+                          Reenviar Reporte
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button className="w-full bg-accent hover:bg-accent/90 text-white font-bold" onClick={() => setEditMode(true)}>
+                        <Edit3 className="h-4 w-4 mr-2" /> Corregir Reporte
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
