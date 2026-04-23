@@ -149,6 +149,31 @@ function ReportsContent() {
     try {
       await reportesAPI.update(reportId, { estado: newStatus });
 
+      if (newStatus === "Aprobado" && selectedReport && selectedReport.ID_Proyecto) {
+         try {
+            await projectsAPI.update(selectedReport.ID_Proyecto.toString(), {
+              Estado: "Finalizado",
+              Progreso: 100,
+              Fecha_Fin: new Date().toISOString()
+            });
+
+            // Dar medallas/puntos al empleado que hizo el reporte
+            if (selectedReport.ID_Empleado) {
+              await recordAction(selectedReport.ID_Empleado.toString(), "PROJECT_COMPLETED");
+            }
+         } catch(e) {
+            console.error("Error updating project / gamification:", e);
+         }
+      } else if (newStatus === "Rechazado" && selectedReport && selectedReport.ID_Proyecto) {
+         try {
+            await projectsAPI.update(selectedReport.ID_Proyecto.toString(), {
+              Estado: "Rechazado"
+            });
+         } catch(e) {
+            console.error("Error updating project status:", e);
+         }
+      }
+
       toast({ title: t.common.success });
       setSelectedReportId(null);
       loadSqlData();
