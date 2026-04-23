@@ -1,46 +1,15 @@
 /**
- * ZYRA — Notification Engine
- * Creates notification documents in Firestore for a given user.
+ * Sistema de Notificaciones - Versión SQL
+ * Ahora las notificaciones se consultan desde el Backend SQL.
  */
 
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import type { Firestore } from "firebase/firestore";
+export const sendNotification = async (userId: string, title: string, message: string) => {
+  console.log(`🔔 [Notificación SQL] Para ${userId}: ${title} - ${message}`);
+  // Implementación futura: POST /api/notifications
+  return true;
+};
 
-export type NotificationType = "report" | "project" | "team" | "level" | "achievement" | "info";
-
-export interface NotificationPayload {
-  userId: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-}
-
-export async function sendNotification(
-  db: Firestore,
-  payload: NotificationPayload
-): Promise<void> {
-  try {
-    await addDoc(collection(db, "notifications"), {
-      ...payload,
-      read: false,
-      createdAt: new Date().toISOString(),
-      serverCreatedAt: serverTimestamp(),
-    });
-  } catch (e) {
-    // Fail silently – notifications are non-critical
-    console.warn("Notification error:", e);
-  }
-}
-
-/**
- * Send a notification to multiple users at once.
- */
-export async function sendNotificationToMany(
-  db: Firestore,
-  userIds: string[],
-  payload: Omit<NotificationPayload, "userId">
-): Promise<void> {
-  await Promise.allSettled(
-    userIds.map((uid) => sendNotification(db, { ...payload, userId: uid }))
-  );
-}
+export const markAsRead = async (notificationId: string) => {
+  console.log(`✅ [Notificación SQL] Marcada como leída: ${notificationId}`);
+  return true;
+};

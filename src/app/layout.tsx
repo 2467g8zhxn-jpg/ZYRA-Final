@@ -1,7 +1,6 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { I18nProvider } from "@/components/providers/i18n-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -33,16 +32,14 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background text-foreground min-h-screen">
         <AuthProvider>
-          <FirebaseClientProvider>
-            <ThemeProvider>
-              <I18nProvider>
-                <SyncProvider>
-                  {children}
-                  <Toaster />
-                </SyncProvider>
-              </I18nProvider>
-            </ThemeProvider>
-          </FirebaseClientProvider>
+          <ThemeProvider>
+            <I18nProvider>
+              <SyncProvider>
+                {children}
+                <Toaster />
+              </SyncProvider>
+            </I18nProvider>
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>
