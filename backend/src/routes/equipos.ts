@@ -41,7 +41,7 @@ router.post('/', async (req: Request, res: Response) => {
                 empleados: {
                     create: integrantes?.map((id: number) => ({
                         ID_Empleado: id,
-                        Cargo: id === ID_Lider ? 'Líder' : null
+                        Cargo: id === ID_Lider ? 'Líder' : 'Integrante'
                     })) || []
                 }
             },
@@ -70,7 +70,7 @@ router.put('/:id', async (req: Request, res: Response) => {
                     data: integrantes.map((empId: number) => ({
                         ID_Equipo: equipoId,
                         ID_Empleado: empId,
-                        Cargo: empId === ID_Lider ? 'Líder' : null
+                        Cargo: empId === ID_Lider ? 'Líder' : 'Integrante'
                     }))
                 });
             }

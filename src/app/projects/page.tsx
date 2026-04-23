@@ -335,6 +335,7 @@ export default function ProjectsPage() {
     try {
       const baseReportData = {
         ID_Proyecto: parseInt(project.ID_Proyecto.toString()),
+        ID_Equipo: project.ID_Equipo ? parseInt(project.ID_Equipo.toString()) : null,
         Comentarios: reportContent || "Avance diario",
         estado: "Pendiente",
         Fecha_Reporte: new Date().toISOString(),

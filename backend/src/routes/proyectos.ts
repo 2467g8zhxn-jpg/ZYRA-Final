@@ -40,13 +40,20 @@ router.get('/:id', async (req: Request, res: Response) => {
 // POST /api/proyectos - Crear proyecto
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { Nombre_Proyecto, ID_Cliente, ID_Servicio, ID_Equipo, Fecha_Inicio, Fecha_Fin, Estado } = req.body;
+    const { Nombre_Proyecto, ID_Cliente, ID_Servicio, ID_Equipo, Fecha_Inicio, Fecha_Fin, Estado, Tipo_Servicio } = req.body;
     if (!Nombre_Proyecto) return res.status(400).json({ error: 'Nombre es requerido' });
+
+    let finalIdServicio = ID_Servicio ? parseInt(ID_Servicio) : null;
+    if (!finalIdServicio && Tipo_Servicio) {
+        const serv = await prisma.servicios.findFirst({ where: { Tipo: Tipo_Servicio }});
+        if (serv) finalIdServicio = serv.ID_Servicio;
+    }
+
     const proyecto = await prisma.proyectos.create({
       data: {
         Nombre_Proyecto,
         ID_Cliente: ID_Cliente ? parseInt(ID_Cliente) : null,
-        ID_Servicio: ID_Servicio ? parseInt(ID_Servicio) : null,
+        ID_Servicio: finalIdServicio,
         ID_Equipo: ID_Equipo ? parseInt(ID_Equipo) : null,
         Fecha_Inicio: Fecha_Inicio ? new Date(Fecha_Inicio) : null,
         Fecha_Fin: Fecha_Fin ? new Date(Fecha_Fin) : null,
