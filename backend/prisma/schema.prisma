@@ -118,7 +118,6 @@ model Reportes {
   proyecto       Proyectos?         @relation(fields: [ID_Proyecto], references: [ID_Proyecto])
   equipo         Equipos?           @relation(fields: [ID_Equipo], references: [ID_Equipo])
   empleado       Empleados?         @relation(fields: [ID_Empleado], references: [ID_Empleado])
-  puntos         Puntos_Historial[]
 }
 
 model Materiales {
@@ -177,11 +176,9 @@ model Puntos_Historial {
   ID_Punto         Int        @id @default(autoincrement())
   ID_Empleado      Int?
   ID_Proyecto      Int?
-  ID_Reporte       Int?
   Cantidad_Puntos  Int?
   Fecha_Asignacion DateTime   @default(now())
   Motivo           String?
   empleado         Empleados? @relation(fields: [ID_Empleado], references: [ID_Empleado])
   proyecto         Proyectos? @relation(fields: [ID_Proyecto], references: [ID_Proyecto])
-  reporte          Reportes?  @relation(fields: [ID_Reporte], references: [ID_Reporte])
 }
