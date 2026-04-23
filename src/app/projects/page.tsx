@@ -114,22 +114,26 @@ export default function ProjectsPage() {
   const [sqlProjects, setSqlProjects] = useState<any[]>([]);
   const [sqlTeams, setSqlTeams] = useState<any[]>([]);
   const [sqlClients, setSqlClients] = useState<any[]>([]);
+  const [sqlReports, setSqlReports] = useState<any[]>([]);
+  const [rejectedReportId, setRejectedReportId] = useState<number | null>(null);
   const [isApiLoading, setIsApiLoading] = useState(true);
 
   const loadSqlData = async () => {
     try {
       setIsApiLoading(true);
-      const [pDataRaw, tDataRaw, clDataRaw, ctDataRaw] = await Promise.all([
+      const [pDataRaw, tDataRaw, clDataRaw, ctDataRaw, rDataRaw] = await Promise.all([
         projectsAPI.getAll(),
         equiposAPI.getAll(),
         clientsAPI.getAll(),
-        checklistsServicioAPI.getAll()
+        checklistsServicioAPI.getAll(),
+        reportesAPI.getAll()
       ]);
 
       setSqlProjects(Array.isArray(pDataRaw) ? pDataRaw : (pDataRaw as any)?.data || []);
       setSqlTeams(Array.isArray(tDataRaw) ? tDataRaw : (tDataRaw as any)?.data || []);
       setSqlClients(Array.isArray(clDataRaw) ? clDataRaw : (clDataRaw as any)?.data || []);
       setChecklistTemplates(Array.isArray(ctDataRaw) ? ctDataRaw : (ctDataRaw as any)?.data || []);
+      setSqlReports(Array.isArray(rDataRaw) ? rDataRaw : (rDataRaw as any)?.data || []);
     } catch (e) {
       console.error("Error loading SQL data", e);
     } finally {
@@ -338,17 +342,38 @@ export default function ProjectsPage() {
     */
     setLoading(true);
     try {
-      const baseReportData = {
-        ID_Proyecto: parseInt(project.ID_Proyecto.toString()),
-        ID_Equipo: project.ID_Equipo ? parseInt(project.ID_Equipo.toString()) : null,
-        Comentarios: reportContent || "Avance diario",
-        estado: "Pendiente",
-        Fecha_Reporte: new Date().toISOString(),
-        Evidencias_URL: "", // Test without image
-        ID_Empleado: profile.ID_Empleado || profile.id
-      };
-      await reportesAPI.create(baseReportData);
-      await projectsAPI.update(project.ID_Proyecto.toString(), { Estado: "EnRevision", Progreso: 100 });
+      if (rejectedReportId) {
+        // UPDATE existing rejected report
+        const updatePayload: any = {
+          Comentarios: reportContent || "Corrección de reporte",
+          estado: "Pendiente"
+        };
+        if (reportPhotos.length > 0) {
+          updatePayload.Evidencias_URL = reportPhotos[0].dataUrl;
+        }
+        await reportesAPI.update(rejectedReportId.toString(), updatePayload);
+        
+        await projectsAPI.update(project.ID_Proyecto.toString(), {
+          Estado: "EnRevision"
+        });
+      } else {
+        // CREATE new report
+        const baseReportData = {
+          ID_Proyecto: parseInt(project.ID_Proyecto.toString()),
+          ID_Equipo: project.ID_Equipo ? parseInt(project.ID_Equipo.toString()) : null,
+          Comentarios: reportContent || "Avance diario",
+          estado: "Pendiente",
+          Fecha_Reporte: new Date().toISOString(),
+          Evidencias_URL: reportPhotos.length > 0 ? reportPhotos[0].dataUrl : "", 
+          ID_Empleado: profile.ID_Empleado || profile.id
+        };
+        await reportesAPI.create(baseReportData);
+        
+        await projectsAPI.update(project.ID_Proyecto.toString(), {
+          Estado: "EnRevision",
+          Progreso: 50
+        });
+      }
       toast({ title: t.common.success });
       setIsSheetOpen(false);
       loadSqlData();
@@ -511,6 +536,22 @@ export default function ProjectsPage() {
                       setIsSheetOpen(o);
                       if (o) {
                         setSelectedProject(project);
+                        setRejectedReportId(null);
+                        setReportContent("");
+                        setReportPhotos([]);
+                        
+                        if (project.Estado === 'Rechazado') {
+                           // Find the rejected report
+                           const rejectedReport = sqlReports.find((r: any) => r.ID_Proyecto === project.ID_Proyecto && r.estado === 'Rechazado');
+                           if (rejectedReport) {
+                             setRejectedReportId(rejectedReport.ID_Reporte);
+                             setReportContent(rejectedReport.Comentarios || "");
+                             if (rejectedReport.Evidencias_URL) {
+                               setReportPhotos([{ name: "Evidencia Anterior", dataUrl: rejectedReport.Evidencias_URL }]);
+                             }
+                           }
+                        }
+
                         let mRaw = project.projectMaterials || [];
                         let mats = Array.isArray(mRaw) ? mRaw : (typeof mRaw === 'string' ? JSON.parse(mRaw) : []);
 
@@ -539,7 +580,7 @@ export default function ProjectsPage() {
                         setOpProjectMaterials(mats);
                       }
                     }}>
-                      <SheetTrigger asChild><Button className={cn("w-full h-10 rounded-none text-white", isEnCurso ? "bg-emerald-600" : "bg-accent")}>{isEnCurso ? "Reportar Avance" : "Iniciar Día"}</Button></SheetTrigger>
+                      <SheetTrigger asChild><Button className={cn("w-full h-10 rounded-none text-white", isEnCurso ? (project.Estado === 'Rechazado' ? "bg-red-500" : "bg-emerald-600") : "bg-accent")}>{project.Estado === 'Rechazado' ? "Corregir Reporte" : (isEnCurso ? "Reportar Avance" : "Iniciar Día")}</Button></SheetTrigger>
                       <SheetContent side="bottom" className="h-[90vh] overflow-y-auto w-full bg-card p-0">
                         <div className="max-w-xl mx-auto pb-10">
                           <SheetHeader className="p-6 border-b bg-muted/20"><SheetTitle>Reportar - {project.Nombre_Proyecto}</SheetTitle></SheetHeader>
@@ -586,7 +627,9 @@ export default function ProjectsPage() {
                                   <Label className="text-xs font-bold uppercase text-accent">Observaciones</Label>
                                   <Textarea value={reportContent} onChange={(e) => setReportContent(e.target.value)} placeholder="Notas de hoy..." />
                                 </div>
-                                <Button onClick={() => handleFinishDayAndReport(project)} className="w-full h-12 bg-emerald-600 text-white font-bold">ENVIAR REPORTE Y TERMINAR</Button>
+                                <Button onClick={() => handleFinishDayAndReport(project)} className={cn("w-full h-12 text-white font-bold", project.Estado === 'Rechazado' ? "bg-red-500 hover:bg-red-600" : "bg-emerald-600")}>
+                                  {project.Estado === 'Rechazado' ? "REENVIAR REPORTE Y TERMINAR" : "ENVIAR REPORTE Y TERMINAR"}
+                                </Button>
                               </div>
                             )}
                           </div>
