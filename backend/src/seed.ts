@@ -38,77 +38,105 @@ async function main() {
   });
 
   // 3. Clientes
-  const client1 = await prisma.clientes.create({
-    data: {
+  console.log('👥 Seeding clients...');
+  const clientsData = [
+    {
       Nombre: 'Comex Railway',
       RazonSocial: 'Comex Railway S.A. de C.V.',
       Correo: 'comex@railway.com',
       Direccion: 'Av. Pintura 500',
       Telefono: '5551234567',
     },
-  });
-
-  const client2 = await prisma.clientes.create({
-    data: {
+    {
       Nombre: 'Walmart Postgre',
       RazonSocial: 'Walmart Postgre S.A. de C.V.',
       Correo: 'mantenimiento@walmart.com',
       Direccion: 'Supermercado 1',
       Telefono: '5559876543',
-    },
-  });
+    }
+  ];
+
+  for (const client of clientsData) {
+    const existing = await prisma.clientes.findFirst({ where: { Nombre: client.Nombre } });
+    if (!existing) await prisma.clientes.create({ data: client });
+  }
 
   // 4. Empleados & Usuarios
-  const empleado1 = await prisma.empleados.create({
-    data: {
-      Nombre: 'Itzel Admin',
-      ID_Empresa: empresa.ID_Empresa,
-      Correo: 'itzel@zyra.com',
-      Telefono: '1112223333',
-    },
-  });
+  console.log('👤 Seeding users...');
+  const itzelEmail = 'itzel@zyra.com';
+  let empleado1 = await prisma.empleados.findFirst({ where: { Correo: itzelEmail } });
+  
+  if (!empleado1) {
+    empleado1 = await prisma.empleados.create({
+      data: {
+        Nombre: 'Itzel Admin',
+        ID_Empresa: empresa.ID_Empresa,
+        Correo: itzelEmail,
+        Telefono: '1112223333',
+      },
+    });
+  }
 
-  const user1 = await prisma.usuarios.create({
-    data: {
-      Username: 'itzel',
-      Password_Hash: 'password123',
-      ID_Empleado: empleado1.ID_Empleado,
-      ID_Rol: adminRol.ID_Rol,
-    },
-  });
+  const existingItzel = await prisma.usuarios.findFirst({ where: { Username: 'itzel' } });
+  if (!existingItzel) {
+    await prisma.usuarios.create({
+      data: {
+        Username: 'itzel',
+        Password_Hash: 'password123',
+        ID_Empleado: empleado1.ID_Empleado,
+        ID_Rol: adminRol.ID_Rol,
+      },
+    });
+  }
 
   // 4b. Servicios
-  const installServ = await prisma.servicios.create({ 
-    data: { Tipo: 'Instalación', Descripcion: 'Proyectos de obra nueva' } 
+  console.log('🛠️ Seeding services...');
+  const installServ = await prisma.servicios.upsert({
+    where: { ID_Servicio: 1 },
+    update: {},
+    create: { 
+      ID_Servicio: 1,
+      Tipo: 'Instalación', 
+      Descripcion: 'Proyectos de obra nueva',
+      ID_Empresa: empresa.ID_Empresa
+    }
   });
-  const maintServ = await prisma.servicios.create({ 
-    data: { Tipo: 'Mantenimiento', Descripcion: 'Limpieza y revisión' } 
+
+  const maintServ = await prisma.servicios.upsert({
+    where: { ID_Servicio: 2 },
+    update: {},
+    create: { 
+      ID_Servicio: 2,
+      Tipo: 'Mantenimiento', 
+      Descripcion: 'Limpieza y revisión',
+      ID_Empresa: empresa.ID_Empresa
+    }
   });
 
   // 5. Materiales
   console.log('📦 Seeding materials...');
-  await prisma.checklist_Servicio_Detalle.deleteMany();
-  await prisma.checklist_Servicio.deleteMany();
-  await prisma.materiales.deleteMany();
+  // No borramos todo para evitar romper relaciones si ya hay datos
+  const materiales = [
+    { Nombre_Material: 'Paneles Solares 450W', Stock_Disponible: 150 },
+    { Nombre_Material: 'Inversor Central 5kW', Stock_Disponible: 10 },
+    { Nombre_Material: 'Microinversores IQ7+', Stock_Disponible: 40 }
+  ];
 
-  const mat1 = await prisma.materiales.create({ data: { Nombre_Material: 'Paneles Solares 450W', Stock_Disponible: 150 } });
-  const mat2 = await prisma.materiales.create({ data: { Nombre_Material: 'Inversor Central 5kW', Stock_Disponible: 10 } });
-  const mat3 = await prisma.materiales.create({ data: { Nombre_Material: 'Microinversores IQ7+', Stock_Disponible: 40 } });
+  for (const mat of materiales) {
+    const existing = await prisma.materiales.findFirst({ where: { Nombre_Material: mat.Nombre_Material } });
+    if (!existing) await prisma.materiales.create({ data: mat });
+  }
   
   console.log('📝 Seeding empty templates for manual setup...');
-  await prisma.checklist_Servicio.create({
-    data: {
-      Nombre: 'Plantilla Instalación',
-      ID_Servicio: installServ.ID_Servicio
-    }
-  });
+  const templates = [
+    { Nombre: 'Plantilla Instalación', ID_Servicio: installServ.ID_Servicio },
+    { Nombre: 'Plantilla Mantenimiento', ID_Servicio: maintServ.ID_Servicio }
+  ];
 
-  await prisma.checklist_Servicio.create({
-    data: {
-      Nombre: 'Plantilla Mantenimiento',
-      ID_Servicio: maintServ.ID_Servicio
-    }
-  });
+  for (const template of templates) {
+    const existing = await prisma.checklist_Servicio.findFirst({ where: { Nombre: template.Nombre } });
+    if (!existing) await prisma.checklist_Servicio.create({ data: template });
+  }
 
   console.log('✅ Seeding complete!');
 }

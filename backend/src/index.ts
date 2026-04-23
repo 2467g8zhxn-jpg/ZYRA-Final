@@ -119,6 +119,19 @@ async function initializeDatabase() {
             });
             console.log("🌱 Default admin created: admin@zyra.com / admin123");
         }
+
+        // Initialize default templates
+        const checklistCount = await prisma.checklist_Servicio.count();
+        if (checklistCount === 0) {
+            await prisma.checklist_Servicio.createMany({
+                data: [
+                    { ID_Checklist_Servicio: 1, ID_Servicio: 1, Nombre: 'Plantilla: Instalación' },
+                    { ID_Checklist_Servicio: 2, ID_Servicio: 2, Nombre: 'Plantilla: Mantenimiento' }
+                ]
+            });
+            console.log("🌱 Default templates initialized");
+        }
+
         console.log("✅ Database check complete");
     } catch (err) {
         console.error("❌ Init error:", err);

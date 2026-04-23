@@ -186,20 +186,22 @@ export default function ProjectsPage() {
           (c.servicio?.Tipo || "").toLowerCase() === serviceType
         ) || checklistTemplates[0];
 
-        if (template?.materiales) {
-          const initialMaterials = template.materiales.map((m: any) => ({
-            ID_Material: m.ID_Material || m.id,
-            name: m.Nombre_Material || m.name || "Material",
-            quantity: m.Cantidad_Requerida || m.quantity || 1,
+        // En SQL, los materiales están en 'detalles'
+        const templateMaterials = template.detalles || template.materiales || [];
+
+        if (templateMaterials.length > 0) {
+          const initialMaterials = templateMaterials.map((d: any) => ({
+            ID_Material: d.ID_Material || d.id || d.material?.ID_Material,
+            name: d.material?.Nombre_Material || d.Nombre_Material || d.name || "Material",
+            quantity: d.Cantidad_Requerida || d.quantity || 1,
             done: false,
-            takenQuantity: m.Cantidad_Requerida || m.quantity || 1,
-            Stock_Disponible: m.Stock_Disponible || 0
+            takenQuantity: d.Cantidad_Requerida || d.quantity || 1,
+            Stock_Disponible: d.material?.Stock_Disponible || d.Stock_Disponible || 0
           }));
-          // En SQL, los materiales se manejan a través de Checklists
-          // @ts-ignore
+          
           await projectsAPI.update(createdProject.ID_Proyecto.toString(), {
-            ID_Servicio: template.ID_Servicio || ID_Servicio,
-            materiales: initialMaterials
+            ID_Servicio: template.ID_Servicio,
+            projectMaterials: initialMaterials
           });
         }
       }
@@ -613,26 +615,27 @@ export default function ProjectsPage() {
                         }
 
                         if (mats.length === 0) {
-                          const type = (project.Tipo_Servicio || "").toLowerCase();
+                          const type = (project.Tipo_Servicio || project.servicio?.Tipo || "").toLowerCase();
                           let template = checklistTemplates.find(c =>
                             (c.Nombre || "").toLowerCase().includes(type) || (c.servicio?.Tipo || "").toLowerCase() === type
                           ) || checklistTemplates[0];
 
-                          if (template?.materiales) {
-                            mats = template.materiales.map((m: any) => ({
-                              ID_Material: m.ID_Material || m.id,
-                              name: m.Nombre_Material || m.name || "Material",
-                              quantity: m.Cantidad_Requerida || m.quantity || 1,
-                              done: false, takenQuantity: m.Cantidad_Requerida || m.quantity || 1,
-                              Stock_Disponible: m.Stock_Disponible || 100
+                          const templateMaterials = template?.detalles || template?.materiales || [];
+
+                          if (templateMaterials.length > 0) {
+                            mats = templateMaterials.map((d: any) => ({
+                              ID_Material: d.ID_Material || d.material?.ID_Material,
+                              name: d.material?.Nombre_Material || d.Nombre_Material || "Material",
+                              quantity: d.Cantidad_Requerida || 1,
+                              done: false, 
+                              takenQuantity: d.Cantidad_Requerida || 1,
+                              Stock_Disponible: d.material?.Stock_Disponible || d.Stock_Disponible || 100
                             }));
-                          } else {
-                            mats = [
-                              { ID_Material: 1, name: "Paneles Solares", quantity: 6, done: false, takenQuantity: 6, Stock_Disponible: 100 },
-                              { ID_Material: 2, name: "Microinversores", quantity: 12, done: false, takenQuantity: 12, Stock_Disponible: 100 }
-                            ];
                           }
-                          projectsAPI.update(project.ID_Proyecto.toString(), { projectMaterials: mats }).catch(console.error);
+                          
+                          if (mats.length > 0) {
+                            projectsAPI.update(project.ID_Proyecto.toString(), { projectMaterials: mats }).catch(console.error);
+                          }
                         }
                         setOpProjectMaterials(mats);
                       }
