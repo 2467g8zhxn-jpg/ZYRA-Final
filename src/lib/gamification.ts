@@ -1,4 +1,4 @@
-import { projectsAPI } from "./api-client";
+import { projectsAPI, employeesAPI } from "./api-client";
 
 /**
  * Sistema de Gamificación - Versión SQL
@@ -7,13 +7,36 @@ import { projectsAPI } from "./api-client";
 
 export const updateUserStats = async (userId: string, pointsToAdd: number, reason: string) => {
   console.log(`🎮 [Gamificación SQL] Sumando ${pointsToAdd} puntos a usuario ${userId} por: ${reason}`);
-  return true;
+  try {
+     await employeesAPI.addPoints(userId, { puntos: pointsToAdd, motivo: reason });
+     return true;
+  } catch(e) {
+     console.error("Error sumando puntos:", e);
+     return false;
+  }
 };
 
 // Agregando la función que faltaba para que no de error en los archivos que la usan
-export const recordAction = async (action: string, metadata?: any) => {
+export const recordAction = async (userId: string | number, action: string, metadata?: any) => {
   console.log(`📝 [Gamificación SQL] Acción registrada: ${action}`, metadata);
-  return true;
+  let points = 0;
+  let reason = "Acción registrada";
+
+  switch (action) {
+    case "PROJECT_COMPLETED":
+      points = 50;
+      reason = "Proyecto Finalizado";
+      break;
+    case "REPORT_APPROVED":
+      points = 10;
+      reason = "Reporte Aprobado";
+      break;
+    default:
+      points = 5;
+      reason = action;
+  }
+
+  return await updateUserStats(userId.toString(), points, reason);
 };
 
 export const getRankByPoints = (points: number) => {

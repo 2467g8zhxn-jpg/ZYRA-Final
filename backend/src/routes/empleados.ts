@@ -8,7 +8,7 @@ const router = Router();
 router.get('/', async (req: Request, res: Response) => {
     try {
         const empleados = await prisma.empleados.findMany({
-            include: { empresa: true, usuario: true },
+            include: { empresa: true, usuario: true, puntos: true },
             orderBy: { ID_Empleado: 'desc' }
         });
         res.json(empleados);
@@ -20,7 +20,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     try {
         const empleado = await prisma.empleados.findUnique({
             where: { ID_Empleado: parseInt(req.params.id) },
-            include: { empresa: true, usuario: true }
+            include: { empresa: true, usuario: true, puntos: true }
         });
         if (!empleado) return res.status(404).json({ error: 'Empleado no encontrado' });
         res.json(empleado);
@@ -102,6 +102,28 @@ router.delete('/:id', async (req: Request, res: Response) => {
         const { id } = req.params;
         await prisma.empleados.delete({ where: { ID_Empleado: parseInt(id) } });
         res.json({ message: 'Empleado eliminado correctamente' });
+    } catch (error) { errorHandler(error, req, res, () => { }); }
+});
+
+// POST /api/empleados/:id/puntos
+router.post('/:id/puntos', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { puntos, motivo, projectId, reportId } = req.body;
+        
+        if (!puntos) return res.status(400).json({ error: 'Faltan puntos' });
+
+        const history = await prisma.puntos_Historial.create({
+            data: {
+                ID_Empleado: parseInt(id),
+                Cantidad_Puntos: parseInt(puntos),
+                Motivo: motivo || 'Acción',
+                ID_Proyecto: projectId ? parseInt(projectId) : null,
+                ID_Reporte: reportId ? parseInt(reportId) : null,
+            }
+        });
+
+        res.status(201).json(history);
     } catch (error) { errorHandler(error, req, res, () => { }); }
 });
 

@@ -23,6 +23,8 @@ import {
   BarChart2,
   Package,
   Wrench,
+  Camera,
+  ClipboardList
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -128,7 +130,8 @@ function AdminDashboard({ proyectos, reportes, empleados, materiales }: any) {
   // Top employees by points
   const topEmployees = useMemo(() =>
     [...(empleados || [])]
-      .sort((a: any, b: any) => (b.puntos || 0) - (a.puntos || 0))
+      .map(e => ({ ...e, totalPuntos: Array.isArray(e.puntos) ? e.puntos.reduce((s:number, p:any) => s + (p.Cantidad_Puntos || 0), 0) : 0 }))
+      .sort((a: any, b: any) => b.totalPuntos - a.totalPuntos)
       .slice(0, 5),
     [empleados]
   );
@@ -290,7 +293,7 @@ function AdminDashboard({ proyectos, reportes, empleados, materiales }: any) {
                   <p className="text-[9px] text-muted-foreground">Nv. {emp.nivel || 1}</p>
                 </div>
                 <Badge variant="outline" className="text-[9px] font-black border-accent/30 text-accent shrink-0">
-                  {emp.puntos || 0} pts
+                  {emp.totalPuntos || 0} pts
                 </Badge>
               </div>
             ))}
@@ -408,16 +411,16 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
           <div className="p-3 rounded-full bg-orange-500/10 mb-2">
             <Flame className="h-6 w-6 text-orange-400" />
           </div>
-          <p className="text-3xl font-black text-foreground">{reportes?.length || 0}</p>
-          <p className="text-[9px] font-black uppercase tracking-widest text-orange-400 mt-0.5">Reportes</p>
+          <p className="text-3xl font-black text-foreground">0</p>
+          <p className="text-[9px] font-black uppercase tracking-widest text-orange-400 mt-0.5">Días de Racha</p>
         </Card>
 
         <Card className="border-border bg-card flex flex-col items-center justify-center p-5">
           <div className="p-3 rounded-full bg-yellow-500/10 mb-2">
             <Trophy className="h-6 w-6 text-yellow-400" />
           </div>
-          <p className="text-3xl font-black text-foreground">{puntos}</p>
-          <p className="text-[9px] font-black uppercase tracking-widest text-yellow-400 mt-0.5">Puntos</p>
+          <p className="text-3xl font-black text-foreground">3</p>
+          <p className="text-[9px] font-black uppercase tracking-widest text-yellow-400 mt-0.5">Logros</p>
         </Card>
       </div>
 
@@ -430,10 +433,23 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
               <Award className="h-4 w-4 text-accent" /> Medallas
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center py-8 gap-2">
-              <Shield className="h-10 w-10 text-muted-foreground/20" />
-              <p className="text-xs text-muted-foreground font-bold">Completa proyectos para ganar medallas</p>
+          <CardContent className="p-5">
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+               <div className="bg-muted/30 border border-border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2">
+                 <ClipboardList className="h-6 w-6 text-accent" />
+                 <p className="text-[10px] font-black uppercase tracking-widest">Primer Reporte</p>
+                 <p className="text-[8px] font-bold text-accent uppercase tracking-widest">Obtenida</p>
+               </div>
+               <div className="bg-muted/30 border border-border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2">
+                 <Camera className="h-6 w-6 text-accent" />
+                 <p className="text-[10px] font-black uppercase tracking-widest">Fotógrafo</p>
+                 <p className="text-[8px] font-bold text-accent uppercase tracking-widest">Obtenida</p>
+               </div>
+               <div className="bg-muted/30 border border-border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2">
+                 <Trophy className="h-6 w-6 text-yellow-500" />
+                 <p className="text-[10px] font-black uppercase tracking-widest">Proyecto Completado</p>
+                 <p className="text-[8px] font-bold text-accent uppercase tracking-widest">Obtenida</p>
+               </div>
             </div>
           </CardContent>
         </Card>

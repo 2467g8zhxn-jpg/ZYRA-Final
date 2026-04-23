@@ -508,7 +508,10 @@ export default function ProjectsPage() {
               <Card key={project.ID_Proyecto} className="bg-card border-border overflow-hidden flex flex-col">
                 <div className="h-32 relative">
                   <Image src={project.Imagen_Url || "https://picsum.photos/seed/solar/800/450"} alt="" fill className="object-cover opacity-80" />
-                  <div className="absolute top-2 right-2">
+                  <div className="absolute top-2 right-2 flex gap-2">
+                    {displayStatus === 'Finalizado' && (
+                      <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 font-bold tracking-wider">FINALIZADO</Badge>
+                    )}
                     {isAdmin && (
                       <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDeleteProject(project.ID_Proyecto)}><Trash2 className="h-4 w-4" /></Button>
                     )}
@@ -521,7 +524,13 @@ export default function ProjectsPage() {
                   <div className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> {project.Ubicacion}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1"><Building2 className="h-3 w-3" /> {project.cliente?.Nombre}</div>
                   <div className="text-xs text-accent font-bold flex items-center gap-1"><Users className="h-3 w-3" /> {assignedTeam?.Nombre_Equipo || "Sin Equipo"}</div>
-                  <div className="pt-2"><Progress value={project.Progreso || 0} className="h-1" /></div>
+                  <div className="pt-2">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Progreso</span>
+                      <span className="text-xs font-bold text-foreground">{project.Progreso || 0}%</span>
+                    </div>
+                    <Progress value={project.Progreso || 0} className="h-1.5" />
+                  </div>
                 </CardContent>
                 <CardFooter className="p-0 border-t border-border">
                   {isAdmin ? (
@@ -530,7 +539,9 @@ export default function ProjectsPage() {
                       <Button variant="ghost" className="h-10 rounded-none" onClick={() => router.push(`/reports?projectId=${project.ID_Proyecto}`)}><ClipboardList className="h-4 w-4 mr-2" /> Reportes</Button>
                     </div>
                   ) : displayStatus === 'Finalizado' ? (
-                    <Button disabled className="w-full h-10 rounded-none">Finalizado</Button>
+                    <div className="w-full h-12 flex items-center justify-center gap-2 bg-muted/40 text-muted-foreground text-sm font-bold border-t border-border">
+                      <CheckCircle2 className="h-4 w-4" /> Proyecto Cerrado
+                    </div>
                   ) : displayStatus === 'EnRevision' ? (
                     <Button disabled className="w-full h-10 rounded-none bg-yellow-600/50 text-white cursor-not-allowed">En Revisión</Button>
                   ) : (

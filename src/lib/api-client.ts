@@ -165,6 +165,9 @@ export const employeesAPI = {
   
   delete: (id: string | number, token?: string) =>
     apiRequest(`/empleados/${id}`, { method: 'DELETE', token }),
+    
+  addPoints: (id: string | number, payload: { puntos: number, motivo: string, projectId?: number, reportId?: number }, token?: string) =>
+    apiRequest(`/empleados/${id}/puntos`, { method: 'POST', body: JSON.stringify(payload), token }),
 };
 
 // ─────────────────────────────────────────────────
