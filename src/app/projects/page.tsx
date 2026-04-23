@@ -352,7 +352,7 @@ export default function ProjectsPage() {
           updatePayload.Evidencias_URL = reportPhotos[0].dataUrl;
         }
         await reportesAPI.update(rejectedReportId.toString(), updatePayload);
-        
+
         await projectsAPI.update(project.ID_Proyecto.toString(), {
           Estado: "EnRevision"
         });
@@ -363,8 +363,8 @@ export default function ProjectsPage() {
         if (!sqlEmployeeId) {
           try {
             const allEmps = await employeesAPI.getAll();
-            const myEmp = allEmps.find((e: any) => 
-              e.usuario?.FirebaseUID === profile?.uid || 
+            const myEmp = allEmps.find((e: any) =>
+              e.usuario?.FirebaseUID === profile?.uid ||
               e.usuario?.Username?.toLowerCase() === profile?.email?.toLowerCase() ||
               e.Nombre?.toLowerCase().includes(profile?.displayName?.toLowerCase() || "")
             );
@@ -378,11 +378,11 @@ export default function ProjectsPage() {
           Comentarios: reportContent || "Avance diario",
           estado: "Pendiente",
           Fecha_Reporte: new Date().toISOString(),
-          Evidencias_URL: reportPhotos.length > 0 ? reportPhotos[0].dataUrl : "", 
+          Evidencias_URL: reportPhotos.length > 0 ? reportPhotos[0].dataUrl : "",
           ID_Empleado: sqlEmployeeId ? parseInt(sqlEmployeeId.toString()) : null
         };
         const createdReport = await reportesAPI.create(baseReportData);
-        
+
         await projectsAPI.update(project.ID_Proyecto.toString(), {
           Estado: "EnRevision",
           Progreso: 50
@@ -391,13 +391,13 @@ export default function ProjectsPage() {
         // OTORGAR PUNTOS AUTOMATICAMENTE AL ENVIAR
         try {
           const allEmps = await employeesAPI.getAll();
-          const myEmp = allEmps.find((e: any) => 
+          const myEmp = allEmps.find((e: any) =>
             String(e.ID_Empleado) === String(profile?.ID_Empleado) ||
             String(e.ID_Empleado) === String(profile?.id) ||
             (e.Nombre?.toLowerCase().includes(profile?.displayName?.toLowerCase() || "")) ||
             (e.usuario?.Username?.toLowerCase() === profile?.email?.toLowerCase())
           );
-          
+
           if (myEmp) {
             await recordAction(myEmp.ID_Empleado, "REPORT_SENT", { reportId: createdReport.ID_Reporte });
             toast({ title: "¡Puntos Ganados!", description: "Has recibido puntos por enviar tu reporte diario." });
@@ -486,33 +486,33 @@ export default function ProjectsPage() {
                   <div className="space-y-2">
                     <Label className="text-xs font-bold text-muted-foreground uppercase">DIRECCIÓN DE OBRA</Label>
                     <div className="grid grid-cols-2 gap-4">
-                      <Button 
-                        variant={newProject.addressType === "client" ? "default" : "outline"} 
+                      <Button
+                        variant={newProject.addressType === "client" ? "default" : "outline"}
                         className={newProject.addressType === "client" ? "bg-accent text-white" : "border-border text-muted-foreground"}
                         onClick={() => setNewProject({ ...newProject, addressType: "client" })}
                       >
-                        📍 Del Cliente
+                        Del Cliente
                       </Button>
-                      <Button 
-                        variant={newProject.addressType === "custom" ? "default" : "outline"} 
+                      <Button
+                        variant={newProject.addressType === "custom" ? "default" : "outline"}
                         className={newProject.addressType === "custom" ? "bg-accent text-white" : "border-border text-muted-foreground"}
                         onClick={() => setNewProject({ ...newProject, addressType: "custom" })}
                       >
-                        ✏️ Personalizada
+                        Personalizada
                       </Button>
                     </div>
                     {newProject.addressType === "client" ? (
-                      <Input 
-                        disabled 
-                        placeholder="Selecciona un cliente para autocompletar" 
+                      <Input
+                        disabled
+                        placeholder="Selecciona un cliente para autocompletar"
                         value={newProject.clientId ? sqlClients?.find((c: any) => c.ID_Cliente.toString() === newProject.clientId)?.Direccion || "Sin dirección registrada" : ""}
                         className="bg-card/50"
                       />
                     ) : (
-                      <Input 
-                        placeholder="Escribe la dirección exacta" 
-                        value={newProject.customAddress} 
-                        onChange={(e) => setNewProject({ ...newProject, customAddress: e.target.value })} 
+                      <Input
+                        placeholder="Escribe la dirección exacta"
+                        value={newProject.customAddress}
+                        onChange={(e) => setNewProject({ ...newProject, customAddress: e.target.value })}
                       />
                     )}
                   </div>
@@ -536,22 +536,22 @@ export default function ProjectsPage() {
             const hasReports = projectReports.length > 0;
             const hasPendingReport = projectReports.some(r => r.estado === 'Pendiente');
             const hasRejectedReport = projectReports.some(r => r.estado === 'Rechazado');
-            
+
             let displayStatus = project.Estado || 'Pendiente';
 
             // Flujo corregido con seguro de progreso
             if (displayStatus === 'Finalizado') {
-               // Ya está terminado
+              // Ya está terminado
             } else if (hasPendingReport) {
               displayStatus = 'EnRevision';
             } else if (hasRejectedReport) {
               displayStatus = 'Rechazado';
             } else if (displayStatus === 'EnProceso') {
-              displayStatus = 'EnProceso'; 
+              displayStatus = 'EnProceso';
             } else if (!hasReports) {
-              displayStatus = 'Activo'; 
+              displayStatus = 'Activo';
             }
-            
+
             const isEnCurso = displayStatus === 'EnProceso' || displayStatus === 'Rechazado';
             const progressValue = displayStatus === 'Finalizado' ? 100 : (project.Progreso || 0);
             const assignedTeam = sqlTeams.find(t => t.ID_Equipo === project.ID_Equipo);
@@ -604,17 +604,17 @@ export default function ProjectsPage() {
                         setRejectedReportId(null);
                         setReportContent("");
                         setReportPhotos([]);
-                        
+
                         if (project.Estado === 'Rechazado') {
-                           // Find the rejected report
-                           const rejectedReport = sqlReports.find((r: any) => r.ID_Proyecto === project.ID_Proyecto && r.estado === 'Rechazado');
-                           if (rejectedReport) {
-                             setRejectedReportId(rejectedReport.ID_Reporte);
-                             setReportContent(rejectedReport.Comentarios || "");
-                             if (rejectedReport.Evidencias_URL) {
-                               setReportPhotos([{ name: "Evidencia Anterior", dataUrl: rejectedReport.Evidencias_URL }]);
-                             }
-                           }
+                          // Find the rejected report
+                          const rejectedReport = sqlReports.find((r: any) => r.ID_Proyecto === project.ID_Proyecto && r.estado === 'Rechazado');
+                          if (rejectedReport) {
+                            setRejectedReportId(rejectedReport.ID_Reporte);
+                            setReportContent(rejectedReport.Comentarios || "");
+                            if (rejectedReport.Evidencias_URL) {
+                              setReportPhotos([{ name: "Evidencia Anterior", dataUrl: rejectedReport.Evidencias_URL }]);
+                            }
+                          }
                         }
 
                         let mRaw = project.projectMaterials || [];
@@ -651,12 +651,12 @@ export default function ProjectsPage() {
                       }
                     }}>
                       <SheetTrigger asChild>
-                        <Button className={cn("w-full h-10 rounded-none text-white", 
-                          displayStatus === 'Rechazado' ? "bg-red-500" : 
-                          (displayStatus === 'EnProceso' ? "bg-emerald-600" : "bg-accent")
+                        <Button className={cn("w-full h-10 rounded-none text-white",
+                          displayStatus === 'Rechazado' ? "bg-red-500" :
+                            (displayStatus === 'EnProceso' ? "bg-emerald-600" : "bg-accent")
                         )}>
-                          {displayStatus === 'Rechazado' ? "Corregir Reporte" : 
-                           (displayStatus === 'EnProceso' ? "Reportar Avance" : "Iniciar Día")}
+                          {displayStatus === 'Rechazado' ? "Corregir Reporte" :
+                            (displayStatus === 'EnProceso' ? "Reportar Avance" : "Iniciar Día")}
                         </Button>
                       </SheetTrigger>
                       <SheetContent side="bottom" className="h-[90vh] overflow-y-auto w-full bg-card p-0">
@@ -683,12 +683,12 @@ export default function ProjectsPage() {
                                     );
                                   }) : <p className="text-center text-muted-foreground py-4">No hay materiales.</p>}
                                 </div>
-                                <Button 
-                                  onClick={() => handleStartDay(project)} 
-                                  className="w-full h-12 bg-accent text-white font-bold" 
-                                  disabled={opProjectMaterials.length > 0 && (!opProjectMaterials.every(m => m.done) || opProjectMaterials.some(m => (m.takenQuantity || 0) < m.quantity))}
+                                <Button
+                                  onClick={() => handleStartDay(project)}
+                                  className="w-full h-12 bg-accent text-white font-bold"
+                                  disabled={loading || (opProjectMaterials.length > 0 && (!opProjectMaterials.every(m => m.done) || opProjectMaterials.some(m => (m.takenQuantity || 0) < m.quantity)))}
                                 >
-                                  CONFIRMAR E INICIAR JORNADA
+                                  {loading ? "Iniciando..." : "CONFIRMAR E INICIAR JORNADA"}
                                 </Button>
                               </div>
                             ) : (
@@ -705,8 +705,12 @@ export default function ProjectsPage() {
                                   <Label className="text-xs font-bold uppercase text-accent">Observaciones</Label>
                                   <Textarea value={reportContent} onChange={(e) => setReportContent(e.target.value)} placeholder="Notas de hoy..." />
                                 </div>
-                                <Button onClick={() => handleFinishDayAndReport(project)} className={cn("w-full h-12 text-white font-bold", project.Estado === 'Rechazado' ? "bg-red-500 hover:bg-red-600" : "bg-emerald-600")}>
-                                  {project.Estado === 'Rechazado' ? "REENVIAR REPORTE Y TERMINAR" : "ENVIAR REPORTE Y TERMINAR"}
+                                <Button
+                                  onClick={() => handleFinishDayAndReport(project)}
+                                  disabled={loading}
+                                  className={cn("w-full h-12 text-white font-bold", project.Estado === 'Rechazado' ? "bg-red-500 hover:bg-red-600" : "bg-emerald-600")}
+                                >
+                                  {loading ? "Enviando..." : (project.Estado === 'Rechazado' ? "REENVIAR REPORTE Y TERMINAR" : "ENVIAR REPORTE Y TERMINAR")}
                                 </Button>
                               </div>
                             )}

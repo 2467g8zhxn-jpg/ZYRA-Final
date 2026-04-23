@@ -46,7 +46,7 @@ import {
   Tooltip,
 } from "recharts";
 import { useI18n } from "@/components/providers/i18n-provider";
-import { calcLevel } from "@/lib/gamification";
+import { calcLevel, recordAction } from "@/lib/gamification";
 import { startOfDay, subWeeks, isAfter, format, startOfWeek, subDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { reportsAPI, projectsAPI, usersAPI, materialsAPI, employeesAPI } from "@/lib/api-client";
@@ -55,10 +55,10 @@ import { reportsAPI, projectsAPI, usersAPI, materialsAPI, employeesAPI } from "@
 // MEDAL CONFIG
 // ─────────────────────────────────────────────────
 const MEDAL_CONFIG: Record<string, { color: string; icon: string; label: string }> = {
-  Novato:   { color: "text-blue-400 bg-blue-500/10 border-blue-500/20",    icon: "🥉", label: "Novato" },
-  Experto:  { color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20", icon: "🥈", label: "Experto" },
-  Elite:    { color: "text-purple-400 bg-purple-500/10 border-purple-500/20",   icon: "🥇", label: "Elite" },
-  Leyenda:  { color: "text-amber-400 bg-amber-500/10 border-amber-500/20",      icon: "👑", label: "Leyenda" },
+  Novato: { color: "text-blue-400 bg-blue-500/10 border-blue-500/20", icon: "🥉", label: "Novato" },
+  Experto: { color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20", icon: "🥈", label: "Experto" },
+  Elite: { color: "text-purple-400 bg-purple-500/10 border-purple-500/20", icon: "🥇", label: "Elite" },
+  Leyenda: { color: "text-amber-400 bg-amber-500/10 border-amber-500/20", icon: "👑", label: "Leyenda" },
 };
 
 // ─────────────────────────────────────────────────
@@ -66,11 +66,11 @@ const MEDAL_CONFIG: Record<string, { color: string; icon: string; label: string 
 // ─────────────────────────────────────────────────
 function statusStyle(status: string) {
   switch (status) {
-    case "Finalizado":  return { color: "text-emerald-400", bg: "bg-emerald-500/10", icon: <CheckCircle2 className="h-3 w-3" /> };
-    case "EnProceso":   return { color: "text-blue-400",    bg: "bg-blue-500/10",    icon: <Activity className="h-3 w-3" /> };
-    case "EnRevision":  return { color: "text-yellow-400",  bg: "bg-yellow-500/10",  icon: <Clock className="h-3 w-3" /> };
-    case "Rechazado":   return { color: "text-red-400",     bg: "bg-red-500/10",     icon: <XCircle className="h-3 w-3" /> };
-    default:            return { color: "text-muted-foreground", bg: "bg-muted/20",  icon: <Clock className="h-3 w-3" /> };
+    case "Finalizado": return { color: "text-emerald-400", bg: "bg-emerald-500/10", icon: <CheckCircle2 className="h-3 w-3" /> };
+    case "EnProceso": return { color: "text-blue-400", bg: "bg-blue-500/10", icon: <Activity className="h-3 w-3" /> };
+    case "EnRevision": return { color: "text-yellow-400", bg: "bg-yellow-500/10", icon: <Clock className="h-3 w-3" /> };
+    case "Rechazado": return { color: "text-red-400", bg: "bg-red-500/10", icon: <XCircle className="h-3 w-3" /> };
+    default: return { color: "text-muted-foreground", bg: "bg-muted/20", icon: <Clock className="h-3 w-3" /> };
   }
 }
 
@@ -81,27 +81,29 @@ function AdminDashboard({ proyectos, reportes, empleados, materiales }: any) {
   const { t } = useI18n();
 
   const stats = useMemo(() => {
-    const activeProjects  = (proyectos || []).filter((p: any) => p.Estado !== "Finalizado").length;
+    const activeProjects = (proyectos || []).filter((p: any) => p.Estado !== "Finalizado").length;
     const finishedProjects = (proyectos || []).filter((p: any) => p.Estado === "Finalizado").length;
-    const pendingReports  = (reportes  || []).filter((r: any) => r.estado === "Pendiente" || !r.estado).length;
-    const approvedReports = (reportes  || []).filter((r: any) => r.estado === "Aprobado").length;
-    const rejectedReports = (reportes  || []).filter((r: any) => r.estado === "Rechazado").length;
-    const totalEmpl       = (empleados || []).length;
-    const criticalMats    = (materiales || []).filter((m: any) => (m.Stock_Disponible || 0) <= 5).length;
+    const pendingReports = (reportes || []).filter((r: any) => r.estado === "Pendiente" || !r.estado).length;
+    const approvedReports = (reportes || []).filter((r: any) => r.estado === "Aprobado").length;
+    const rejectedReports = (reportes || []).filter((r: any) => r.estado === "Rechazado").length;
+    const totalEmpl = (empleados || []).length;
+    const criticalMats = (materiales || []).filter((m: any) => (m.Stock_Disponible || 0) <= 5).length;
 
     const today = startOfDay(new Date());
     const todayReports = (reportes || []).filter((r: any) =>
       r.Fecha_Reporte && isAfter(new Date(r.Fecha_Reporte), today)
     ).length;
 
-    return { activeProjects, finishedProjects, pendingReports, approvedReports, rejectedReports, totalEmpl, todayReports, criticalMats,
-      totalProjects: (proyectos || []).length, totalReports: (reportes || []).length };
+    return {
+      activeProjects, finishedProjects, pendingReports, approvedReports, rejectedReports, totalEmpl, todayReports, criticalMats,
+      totalProjects: (proyectos || []).length, totalReports: (reportes || []).length
+    };
   }, [proyectos, reportes, empleados, materiales]);
 
   // Weekly bar chart
   const weeklyData = useMemo(() => {
     const weeks = [6, 5, 4, 3, 2, 1, 0].map(offset => {
-      const date  = subDays(new Date(), offset);
+      const date = subDays(new Date(), offset);
       const label = format(date, "EEE", { locale: es });
       return { name: label, reportes: 0, proyectos: 0, date };
     });
@@ -116,21 +118,21 @@ function AdminDashboard({ proyectos, reportes, empleados, materiales }: any) {
 
   // Pie chart: project states
   const pieData = useMemo(() => [
-    { name: "Activos",    value: stats.activeProjects,   color: "hsl(var(--accent))" },
-    { name: "Finalizados",value: stats.finishedProjects, color: "hsl(142 71% 45%)" },
+    { name: "Activos", value: stats.activeProjects, color: "hsl(var(--accent))" },
+    { name: "Finalizados", value: stats.finishedProjects, color: "hsl(142 71% 45%)" },
   ], [stats]);
 
   // Report status breakdown
   const reportStatusData = useMemo(() => [
-    { name: "Pendiente", value: stats.pendingReports,  color: "#f59e0b" },
-    { name: "Aprobado",  value: stats.approvedReports, color: "#10b981" },
+    { name: "Pendiente", value: stats.pendingReports, color: "#f59e0b" },
+    { name: "Aprobado", value: stats.approvedReports, color: "#10b981" },
     { name: "Rechazado", value: stats.rejectedReports, color: "#ef4444" },
   ], [stats]);
 
   // Top employees by points
   const topEmployees = useMemo(() =>
     [...(empleados || [])]
-      .map(e => ({ ...e, totalPuntos: Array.isArray(e.puntos) ? e.puntos.reduce((s:number, p:any) => s + (p.Cantidad_Puntos || 0), 0) : 0 }))
+      .map(e => ({ ...e, totalPuntos: Array.isArray(e.puntos) ? e.puntos.reduce((s: number, p: any) => s + (p.Cantidad_Puntos || 0), 0) : 0 }))
       .sort((a: any, b: any) => b.totalPuntos - a.totalPuntos)
       .slice(0, 5),
     [empleados]
@@ -159,10 +161,10 @@ function AdminDashboard({ proyectos, reportes, empleados, materiales }: any) {
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Proyectos Activos",  value: stats.activeProjects,  icon: <Briefcase className="h-5 w-5" />,  delta: `${stats.totalProjects} en total`, color: "text-accent bg-accent/10" },
-          { label: "Reportes Hoy",       value: stats.todayReports,    icon: <FileText className="h-5 w-5" />,   delta: `${stats.pendingReports} pendientes`, color: "text-yellow-400 bg-yellow-500/10" },
-          { label: "Empleados",          value: stats.totalEmpl,        icon: <Users className="h-5 w-5" />,     delta: "en nómina activa", color: "text-blue-400 bg-blue-500/10" },
-          { label: "Stock Crítico",      value: stats.criticalMats,     icon: <Package className="h-5 w-5" />,   delta: "materiales ≤ 5 unidades", color: "text-red-400 bg-red-500/10" },
+          { label: "Proyectos Activos", value: stats.activeProjects, icon: <Briefcase className="h-5 w-5" />, delta: `${stats.totalProjects} en total`, color: "text-accent bg-accent/10" },
+          { label: "Reportes Hoy", value: stats.todayReports, icon: <FileText className="h-5 w-5" />, delta: `${stats.pendingReports} pendientes`, color: "text-yellow-400 bg-yellow-500/10" },
+          { label: "Empleados", value: stats.totalEmpl, icon: <Users className="h-5 w-5" />, delta: "en nómina activa", color: "text-blue-400 bg-blue-500/10" },
+          { label: "Stock Crítico", value: stats.criticalMats, icon: <Package className="h-5 w-5" />, delta: "materiales ≤ 5 unidades", color: "text-red-400 bg-red-500/10" },
         ].map((kpi) => (
           <Card key={kpi.label} className="border-border bg-card hover:border-accent/30 transition-all">
             <CardContent className="p-5">
@@ -285,8 +287,8 @@ function AdminDashboard({ proyectos, reportes, empleados, materiales }: any) {
                 <div className={cn(
                   "h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0",
                   i === 0 ? "bg-amber-500/20 text-amber-400" :
-                  i === 1 ? "bg-slate-400/20 text-slate-300" :
-                  i === 2 ? "bg-orange-700/20 text-orange-500" : "bg-muted text-muted-foreground"
+                    i === 1 ? "bg-slate-400/20 text-slate-300" :
+                      i === 2 ? "bg-orange-700/20 text-orange-500" : "bg-muted text-muted-foreground"
                 )}>{i + 1}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-foreground truncate">{emp.nombre || "—"}</p>
@@ -337,20 +339,25 @@ function AdminDashboard({ proyectos, reportes, empleados, materiales }: any) {
 // EMPLOYEE DASHBOARD
 // ─────────────────────────────────────────────────
 function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
-  const puntos   = empleadoData?.puntos?.reduce((s: number, p: any) => s + (p.Cantidad_Puntos || 0), 0) || 0;
-  const nivel    = calcLevel(puntos);
+  const puntos = useMemo(() => {
+    return (empleadoData?.puntos || []).reduce((s: number, p: any) => {
+      const val = parseInt(p.Cantidad_Puntos?.toString() || "0");
+      return s + (isNaN(val) ? 0 : val);
+    }, 0);
+  }, [empleadoData]);
+  const nivel = calcLevel(puntos);
   const targetPts = nivel * 200;
-  const pct      = Math.min(((puntos % 200) / 200) * 100, 100);
+  const pct = Math.min(((puntos % 200) / 200) * 100, 100);
 
   // Sistema de Logros Dinámico
   const logros = useMemo(() => {
     const list = [];
     const approvedCount = (reportes || []).filter((r: any) => r.estado === "Aprobado").length;
-    
+
     if (approvedCount >= 1) list.push("first_report");
     if (approvedCount >= 5) list.push("photographer");
     if ((reportes || []).some((r: any) => r.proyecto?.Estado === "Finalizado")) list.push("project_master");
-    
+
     return list;
   }, [reportes]);
 
@@ -379,7 +386,7 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
         pts: `+${p.Cantidad_Puntos} pts`,
         color: "text-emerald-400",
       }));
-    
+
     // Fallback: also show recent reports even if they don't have points yet
     const myReports = (reportes || [])
       .filter((r: any) => !ptsHistory.some((p: any) => p.sub.includes(String(r.ID_Proyecto))))
@@ -408,7 +415,7 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
           <h2 className="text-3xl font-black tracking-tight text-foreground">
             ¡Hola, <span className="text-accent">{nombre.split(" ")[0]}</span>! 👋
           </h2>
-          <button 
+          <button
             onClick={async () => {
               if (empleadoData?.ID_Empleado) {
                 await recordAction(empleadoData.ID_Empleado, "REPORT_SENT");
@@ -473,21 +480,21 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
           </CardHeader>
           <CardContent className="p-5">
             <div className="grid grid-cols-2 gap-4">
-                <div className={cn("border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 transition-all", logros.includes("first_report") ? "bg-accent/10 border-accent/30" : "bg-muted/30 border-border opacity-50")}>
-                  <ClipboardList className={cn("h-6 w-6", logros.includes("first_report") ? "text-accent" : "text-muted-foreground")} />
-                  <p className="text-[10px] font-black uppercase tracking-widest">Primer Reporte</p>
-                  <p className="text-[8px] font-bold uppercase tracking-widest">{logros.includes("first_report") ? "Obtenida" : "Bloqueada"}</p>
-                </div>
-                <div className={cn("border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 transition-all", logros.includes("photographer") ? "bg-accent/10 border-accent/30" : "bg-muted/30 border-border opacity-50")}>
-                  <Camera className={cn("h-6 w-6", logros.includes("photographer") ? "text-accent" : "text-muted-foreground")} />
-                  <p className="text-[10px] font-black uppercase tracking-widest">Fotógrafo</p>
-                  <p className="text-[8px] font-bold uppercase tracking-widest">{logros.includes("photographer") ? "Obtenida" : "Bloqueada"}</p>
-                </div>
-                <div className={cn("border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 transition-all col-span-2", logros.includes("project_master") ? "bg-yellow-500/10 border-yellow-500/30" : "bg-muted/30 border-border opacity-50")}>
-                  <Trophy className={cn("h-6 w-6", logros.includes("project_master") ? "text-yellow-500" : "text-muted-foreground")} />
-                  <p className="text-[10px] font-black uppercase tracking-widest">Proyecto Completado</p>
-                  <p className="text-[8px] font-bold uppercase tracking-widest">{logros.includes("project_master") ? "Obtenida" : "Bloqueada"}</p>
-                </div>
+              <div className={cn("border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 transition-all", logros.includes("first_report") ? "bg-accent/10 border-accent/30" : "bg-muted/30 border-border opacity-50")}>
+                <ClipboardList className={cn("h-6 w-6", logros.includes("first_report") ? "text-accent" : "text-muted-foreground")} />
+                <p className="text-[10px] font-black uppercase tracking-widest">Primer Reporte</p>
+                <p className="text-[8px] font-bold uppercase tracking-widest">{logros.includes("first_report") ? "Obtenida" : "Bloqueada"}</p>
+              </div>
+              <div className={cn("border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 transition-all", logros.includes("photographer") ? "bg-accent/10 border-accent/30" : "bg-muted/30 border-border opacity-50")}>
+                <Camera className={cn("h-6 w-6", logros.includes("photographer") ? "text-accent" : "text-muted-foreground")} />
+                <p className="text-[10px] font-black uppercase tracking-widest">Fotógrafo</p>
+                <p className="text-[8px] font-bold uppercase tracking-widest">{logros.includes("photographer") ? "Obtenida" : "Bloqueada"}</p>
+              </div>
+              <div className={cn("border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 transition-all col-span-2", logros.includes("project_master") ? "bg-yellow-500/10 border-yellow-500/30" : "bg-muted/30 border-border opacity-50")}>
+                <Trophy className={cn("h-6 w-6", logros.includes("project_master") ? "text-yellow-500" : "text-muted-foreground")} />
+                <p className="text-[10px] font-black uppercase tracking-widest">Proyecto Completado</p>
+                <p className="text-[8px] font-bold uppercase tracking-widest">{logros.includes("project_master") ? "Obtenida" : "Bloqueada"}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -550,17 +557,17 @@ export default function DashboardPage() {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        
+
         const reportesData = await reportsAPI.getAll();
         setReportes(Array.isArray(reportesData) ? reportesData : []);
 
         if (isAdmin) {
           const proyectosData = await projectsAPI.getAll();
           setProyectos(Array.isArray(proyectosData) ? proyectosData : []);
-          
+
           const empleadosData = await employeesAPI.getAll();
           setEmpleados(Array.isArray(empleadosData) ? empleadosData : []);
-          
+
           const materialesData = await materialsAPI.getAll();
           setMateriales(Array.isArray(materialesData) ? materialesData : []);
         } else {
@@ -569,17 +576,17 @@ export default function DashboardPage() {
             const allEmpleados = await employeesAPI.getAll();
             const myRecord = Array.isArray(allEmpleados)
               ? allEmpleados.find((e: any) => {
-                  const sqlName = e.Nombre?.toLowerCase() || "";
-                  const fbName = profile?.displayName?.toLowerCase() || "";
-                  const sqlUser = e.usuario?.Username?.toLowerCase() || "";
-                  const fbEmail = profile?.email?.toLowerCase() || "";
-                  
-                  return String(e.ID_Empleado) === String(profile?.ID_Empleado) ||
-                         String(e.ID_Empleado) === String(profile?.id) ||
-                         (fbName && sqlName.includes(fbName)) ||
-                         (fbEmail && sqlUser.includes(fbEmail.split('@')[0])) ||
-                         (fbEmail === sqlUser);
-                })
+                const sqlName = e.Nombre?.toLowerCase() || "";
+                const fbName = profile?.displayName?.toLowerCase() || "";
+                const sqlUser = e.usuario?.Username?.toLowerCase() || "";
+                const fbEmail = profile?.email?.toLowerCase() || "";
+
+                return String(e.ID_Empleado) === String(profile?.ID_Empleado) ||
+                  String(e.ID_Empleado) === String(profile?.id) ||
+                  (fbName && sqlName.includes(fbName)) ||
+                  (fbEmail && sqlUser.includes(fbEmail.split('@')[0])) ||
+                  (fbEmail === sqlUser);
+              })
               : null;
             setEmpleadoData(myRecord || null);
           } catch (e) {
