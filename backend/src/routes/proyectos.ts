@@ -45,8 +45,8 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 
     let finalIdServicio = ID_Servicio ? parseInt(ID_Servicio) : null;
     if (!finalIdServicio && Tipo_Servicio) {
-        const serv = await prisma.servicios.findFirst({ where: { Tipo: Tipo_Servicio }});
-        if (serv) finalIdServicio = serv.ID_Servicio;
+      const serv = await prisma.servicios.findFirst({ where: { Tipo: Tipo_Servicio } });
+      if (serv) finalIdServicio = serv.ID_Servicio;
     }
 
     const proyecto = await prisma.proyectos.create({
@@ -69,7 +69,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { Nombre_Proyecto, ID_Cliente, ID_Servicio, ID_Equipo, Fecha_Inicio, Fecha_Fin, Estado, materiales } = req.body;
-    
+
     // Actualizar datos básicos
     const proyecto = await prisma.proyectos.update({
       where: { ID_Proyecto: parseInt(req.params.id) },
