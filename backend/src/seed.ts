@@ -24,7 +24,7 @@ async function main() {
     },
   });
 
-  // 2. Empresa (Required for Empleados)
+  // 2. Empresa
   const empresa = await prisma.empresa.upsert({
     where: { ID_Empresa: 1 },
     update: {},
@@ -71,13 +71,13 @@ async function main() {
   const user1 = await prisma.usuarios.create({
     data: {
       Username: 'itzel',
-      Password_Hash: 'password123', // Hardcoded for testing
+      Password_Hash: 'password123',
       ID_Empleado: empleado1.ID_Empleado,
       ID_Rol: adminRol.ID_Rol,
     },
   });
 
-  // 4b. Servicios (Required for templates)
+  // 4b. Servicios
   const installServ = await prisma.servicios.create({ 
     data: { Tipo: 'Instalación', Descripcion: 'Proyectos de obra nueva' } 
   });
@@ -87,9 +87,9 @@ async function main() {
 
   // 5. Materiales
   console.log('📦 Seeding materials...');
-  await prisma.checklist_Servicio_Detalle.deleteMany(); // Limpiar detalles
-  await prisma.checklist_Servicio.deleteMany(); // Limpiar plantillas
-  await prisma.materiales.deleteMany(); // Limpiar antes de sembrar para evitar duplicados en pruebas
+  await prisma.checklist_Servicio_Detalle.deleteMany();
+  await prisma.checklist_Servicio.deleteMany();
+  await prisma.materiales.deleteMany();
 
   const mat1 = await prisma.materiales.create({ data: { Nombre_Material: 'Paneles Solares 450W', Stock_Disponible: 150 } });
   const mat2 = await prisma.materiales.create({ data: { Nombre_Material: 'Inversor Central 5kW', Stock_Disponible: 10 } });
@@ -111,12 +111,6 @@ async function main() {
   });
 
   console.log('✅ Seeding complete!');
-  console.log(`Created:
-    - Roles: ${adminRol.Nombre_Rol}, ${techRol.Nombre_Rol}
-    - Empresa: ${empresa.Nombre}
-    - Clients: ${client1.Nombre}, ${client2.Nombre}
-    - User/Employee: ${user1.Username} (${empleado1.Nombre})
-  `);
 }
 
 main()
