@@ -161,8 +161,20 @@ function ReportsContent() {
             });
 
             // Dar medallas/puntos al empleado que hizo el reporte
-            if (report.ID_Empleado) {
-              await recordAction(report.ID_Empleado.toString(), "PROJECT_COMPLETED");
+            let targetEmployeeId = report.ID_Empleado;
+            
+            // Si el reporte no tiene empleado (reportes antiguos), buscamos al primer técnico del equipo
+            if (!targetEmployeeId && report.ID_Equipo) {
+               try {
+                  const teamData = await usersAPI.getAll(); // En este proyecto, parece que los técnicos se listan aquí o en empleados
+                  const allEmps = await employeesAPI.getAll();
+                  const teamEmp = allEmps.find((e: any) => e.ID_Equipo === report.ID_Equipo);
+                  if (teamEmp) targetEmployeeId = teamEmp.ID_Empleado;
+               } catch (e) { console.warn("No se pudo autodetectar empleado", e); }
+            }
+
+            if (targetEmployeeId) {
+              await recordAction(targetEmployeeId.toString(), "PROJECT_COMPLETED");
             }
          } catch(e) {
             console.error("Error updating project / gamification:", e);
