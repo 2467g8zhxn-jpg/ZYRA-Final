@@ -20,7 +20,6 @@ router.get('/', async (req: Request, res: Response) => {
             include: {
                 proyecto: true,
                 equipo: true,
-                empleado: true
             },
             orderBy: {
                 Fecha_Reporte: 'desc',
@@ -45,7 +44,6 @@ router.get('/:id', async (req: Request, res: Response) => {
             include: {
                 proyecto: true,
                 equipo: true,
-                empleado: true
             },
         });
 
@@ -70,6 +68,8 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'ID_Proyecto o ID_Equipo son requeridos' });
         }
 
+        const empId = ID_Empleado ? parseInt(ID_Empleado) : null;
+
         const report = await prisma.reportes.create({
             data: {
                 ID_Proyecto: ID_Proyecto ? parseInt(ID_Proyecto) : null,
@@ -77,12 +77,10 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
                 Comentarios,
                 Evidencias_URL,
                 estado,
-                ID_Empleado: ID_Empleado ? parseInt(ID_Empleado) : null,
-            },
+            } as any,
             include: {
                 proyecto: true,
                 equipo: true,
-                empleado: true
             },
         });
 
@@ -111,7 +109,6 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
             include: {
                 proyecto: true,
                 equipo: true,
-                empleado: true
             },
         });
 
@@ -122,17 +119,28 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
 });
 
 // ─────────────────────────────────────────────────
-// DELETE /api/reports/:id - Eliminar reporte
+// DELETE /api/reports/:id - Eliminar reporte (+ puntos en cascada)
 // ─────────────────────────────────────────────────
 router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        const reportId = parseInt(id);
 
+        if (isNaN(reportId)) {
+            return res.status(400).json({ error: 'ID inválido' });
+        }
+
+        // 1. Borrar los puntos asociados a este reporte en Puntos_Historial
+        await prisma.puntos_Historial.deleteMany({
+            where: { ID_Reporte: reportId }
+        }).catch(() => { /* ignorar si no hay puntos */ });
+
+        // 2. Borrar el reporte
         await prisma.reportes.delete({
-            where: { ID_Reporte: parseInt(id) },
+            where: { ID_Reporte: reportId },
         });
 
-        res.json({ message: 'Report deleted successfully' });
+        res.json({ message: 'Reporte eliminado correctamente' });
     } catch (error) {
         errorHandler(error, req, res, () => { });
     }

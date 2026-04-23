@@ -97,7 +97,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/empleados/:id
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         await prisma.empleados.delete({ where: { ID_Empleado: parseInt(id) } });
@@ -113,12 +113,30 @@ router.post('/:id/puntos', async (req: Request, res: Response) => {
         
         if (!puntos) return res.status(400).json({ error: 'Faltan puntos' });
 
-        const empId = parseInt(id);
-        const pts = parseInt(puntos);
+        let empId: number | null = null;
         
-        if (isNaN(empId) || isNaN(pts)) {
-            return res.status(400).json({ error: 'IDs o puntos inválidos' });
+        // Resolución de Identidad Flexible
+        if (!isNaN(parseInt(id))) {
+            empId = parseInt(id);
+        } else {
+            // Si el ID no es numérico, buscar por nombre o username
+            const foundEmp = await prisma.empleados.findFirst({
+                where: {
+                    OR: [
+                        { Nombre: { contains: id, mode: 'insensitive' } },
+                        { usuario: { Username: { contains: id, mode: 'insensitive' } } }
+                    ]
+                }
+            });
+            if (foundEmp) empId = foundEmp.ID_Empleado;
         }
+
+        if (!empId) {
+            return res.status(404).json({ error: 'Empleado no encontrado para asignar puntos' });
+        }
+
+        const pts = parseInt(puntos);
+        if (isNaN(pts)) return res.status(400).json({ error: 'Cantidad de puntos inválida' });
 
         const history = await prisma.puntos_Historial.create({
             data: {

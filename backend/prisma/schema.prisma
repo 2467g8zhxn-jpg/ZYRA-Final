@@ -42,7 +42,8 @@ model Usuarios {
   ID_Empleado   Int?      @unique
   ID_Rol        Int?
   Username      String    @db.VarChar(50)
-  Password_Hash String    @db.VarChar(255)
+  Password_Hash String?   @db.VarChar(255)
+  FirebaseUID   String?   @unique @db.VarChar(128)
   empleado      Empleados? @relation(fields: [ID_Empleado], references: [ID_Empleado])
   rol           Roles?    @relation(fields: [ID_Rol], references: [ID_Rol])
 }
