@@ -7,7 +7,7 @@ const router = Router();
 // GET /api/reports - Obtener todos los reportes
 router.get('/', async (req: Request, res: Response) => {
     try {
-        const reportes = await prisma.reportes.findMany({
+        const reportes = await (prisma.reportes as any).findMany({
             include: {
                 proyecto: true,
                 equipo: true,
@@ -25,7 +25,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const report = await prisma.reportes.findUnique({
+        const report = await (prisma.reportes as any).findUnique({
             where: { ID_Reporte: parseInt(id) },
             include: {
                 proyecto: true,
