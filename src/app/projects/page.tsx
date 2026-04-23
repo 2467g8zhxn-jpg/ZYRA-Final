@@ -168,7 +168,8 @@ export default function ProjectsPage() {
           : newProject.customAddress,
         Estado: "Pendiente",
         Progreso: 0,
-        Imagen_Url: newProject.imageUrl
+        Imagen_Url: newProject.imageUrl,
+        Fecha_Inicio: new Date().toISOString()
       };
 
       const createdProject = await projectsAPI.create(payload);
@@ -245,7 +246,8 @@ export default function ProjectsPage() {
         Estado: managedStatus,
         Progreso: managedStatus === 'Finalizado' ? 100 : managedProgress,
         ID_Equipo: managedTeamId === 'no-team' ? null : parseInt(managedTeamId),
-        Ubicacion: managedUbicacion || null
+        Ubicacion: managedUbicacion || null,
+        ...(managedStatus === 'Finalizado' && { Fecha_Fin: new Date().toISOString() })
       };
       await projectsAPI.update(managedProject.ID_Proyecto.toString(), payload);
       toast({ title: t.common.success });
