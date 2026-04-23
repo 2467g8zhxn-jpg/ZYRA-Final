@@ -531,6 +531,8 @@ export default function ProjectsPage() {
                     </div>
                   ) : displayStatus === 'Finalizado' ? (
                     <Button disabled className="w-full h-10 rounded-none">Finalizado</Button>
+                  ) : displayStatus === 'EnRevision' ? (
+                    <Button disabled className="w-full h-10 rounded-none bg-yellow-600/50 text-white cursor-not-allowed">En Revisión</Button>
                   ) : (
                     <Sheet open={isSheetOpen && selectedProject?.ID_Proyecto === project.ID_Proyecto} onOpenChange={(o) => {
                       setIsSheetOpen(o);
