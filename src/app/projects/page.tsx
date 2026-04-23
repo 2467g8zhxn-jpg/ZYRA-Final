@@ -388,19 +388,10 @@ export default function ProjectsPage() {
           Progreso: 50
         });
 
-        // OTORGAR PUNTOS AUTOMATICAMENTE AL ENVIAR
-        // Usamos sqlEmployeeId que ya fue calculado correctamente arriba
-        if (sqlEmployeeId) {
-          try {
-            await recordAction(sqlEmployeeId, "REPORT_SENT", { reportId: createdReport?.ID_Reporte });
-            console.log("✅ Puntos otorgados a empleado ID:", sqlEmployeeId);
-            toast({ title: "¡Puntos Ganados! 🎉", description: "Has recibido 50 puntos por tu reporte diario." });
-          } catch (err) {
-            console.warn("No se pudieron asignar puntos automáticos", err);
-          }
-        } else {
-          console.warn("⚠️ No se encontró sqlEmployeeId para otorgar puntos");
-        }
+        // NOTA: Los puntos se otorgan automáticamente en el backend
+        // cuando el Admin finaliza el proyecto (Estado = "Finalizado")
+        // Ver: backend/src/routes/proyectos.ts
+
       }
       toast({ title: t.common.success });
       setIsSheetOpen(false);

@@ -5,10 +5,15 @@ import { projectsAPI, employeesAPI } from "./api-client";
  * Ahora los puntos se manejan a través de la API de Reportes y Proyectos en PostgreSQL.
  */
 
-export const updateUserStats = async (userId: string, pointsToAdd: number, reason: string) => {
+export const updateUserStats = async (userId: string, pointsToAdd: number, reason: string, projectId?: number, reportId?: number) => {
   console.log(`🎮 [Gamificación SQL] Sumando ${pointsToAdd} puntos a usuario ${userId} por: ${reason}`);
   try {
-     await employeesAPI.addPoints(userId, { puntos: pointsToAdd, motivo: reason });
+     await employeesAPI.addPoints(userId, { 
+       puntos: pointsToAdd, 
+       motivo: reason,
+       projectId: projectId,
+       reportId: reportId
+     });
      return true;
   } catch(e) {
      console.error("Error sumando puntos:", e);
@@ -40,7 +45,13 @@ export const recordAction = async (userId: string | number, action: string, meta
       reason = action;
   }
 
-  return await updateUserStats(userId.toString(), points, reason);
+  return await updateUserStats(
+    userId.toString(), 
+    points, 
+    reason, 
+    metadata?.projectId, 
+    metadata?.reportId
+  );
 };
 
 export const getRankByPoints = (points: number) => {

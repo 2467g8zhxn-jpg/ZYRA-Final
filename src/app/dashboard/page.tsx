@@ -563,9 +563,9 @@ export default function DashboardPage() {
         } else {
           // For operators: load their own employee record (with puntos)
           try {
-            // Si tenemos empleadoId directo del login, usarlo (más fiable)
             if (profile?.empleadoId) {
               const empData = await employeesAPI.getById(profile.empleadoId);
+              console.log("📊 [DEBUG Dashboard] Datos del empleado:", empData);
               setEmpleadoData(empData || null);
             } else {
               // Fallback: buscar por email (Username en SQL)
@@ -575,6 +575,7 @@ export default function DashboardPage() {
                     e.usuario?.Username?.toLowerCase() === (profile?.email || "").toLowerCase()
                   )
                 : null;
+              console.log("📊 [DEBUG Dashboard] Datos del empleado (fallback):", myRecord);
               setEmpleadoData(myRecord || null);
             }
           } catch (e) {

@@ -145,8 +145,17 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
 // DELETE /api/proyectos/:id
 router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    await prisma.proyectos.delete({ where: { ID_Proyecto: parseInt(req.params.id) } });
-    res.json({ message: 'Proyecto eliminado' });
+    const projectId = parseInt(req.params.id);
+    
+    // 1. Borrar puntos asociados en Puntos_Historial
+    await prisma.puntos_Historial.deleteMany({
+      where: { ID_Proyecto: projectId }
+    }).catch(() => {});
+
+    // 2. Borrar el proyecto
+    await prisma.proyectos.delete({ where: { ID_Proyecto: projectId } });
+    
+    res.json({ message: 'Proyecto eliminado y puntos limpiados' });
   } catch (error) { errorHandler(error, req, res, () => { }); }
 });
 
