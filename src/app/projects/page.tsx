@@ -507,20 +507,21 @@ export default function ProjectsPage() {
             
             let displayStatus = project.Estado || 'Pendiente';
 
-            // Flujo corregido:
-            if (hasPendingReport) {
+            // Flujo corregido con seguro de progreso
+            if (displayStatus === 'Finalizado') {
+               // Ya está terminado
+            } else if (hasPendingReport) {
               displayStatus = 'EnRevision';
             } else if (hasRejectedReport) {
               displayStatus = 'Rechazado';
             } else if (displayStatus === 'EnProceso') {
-              // Si ya inició el día, el botón dirá "Reportar Avance" aunque no haya reportes aún
               displayStatus = 'EnProceso'; 
-            } else if (!hasReports && displayStatus !== 'Finalizado') {
-              // Si no hay reportes y NO ha iniciado día -> "Iniciar Día"
+            } else if (!hasReports) {
               displayStatus = 'Activo'; 
             }
             
             const isEnCurso = displayStatus === 'EnProceso' || displayStatus === 'Rechazado';
+            const progressValue = displayStatus === 'Finalizado' ? 100 : (project.Progreso || 0);
             const assignedTeam = sqlTeams.find(t => t.ID_Equipo === project.ID_Equipo);
 
             return (
@@ -543,12 +544,12 @@ export default function ProjectsPage() {
                   <div className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> {project.Ubicacion}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1"><Building2 className="h-3 w-3" /> {project.cliente?.Nombre}</div>
                   <div className="text-xs text-accent font-bold flex items-center gap-1"><Users className="h-3 w-3" /> {assignedTeam?.Nombre_Equipo || "Sin Equipo"}</div>
-                  <div className="pt-2">
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Progreso</span>
-                      <span className="text-xs font-bold text-foreground">{project.Progreso || 0}%</span>
+                  <div className="space-y-2 pt-2">
+                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                      <span className="text-muted-foreground">Progreso</span>
+                      <span className="text-foreground">{progressValue}%</span>
                     </div>
-                    <Progress value={project.Progreso || 0} className="h-1.5" />
+                    <Progress value={progressValue} className="h-1.5 rounded-full" />
                   </div>
                 </CardContent>
                 <CardFooter className="p-0 border-t border-border">

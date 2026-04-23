@@ -178,9 +178,13 @@ function ReportsContent() {
 
             if (targetEmployeeId) {
               console.log("🎯 Otorgando puntos a empleado ID:", targetEmployeeId);
-              await recordAction(targetEmployeeId, "PROJECT_COMPLETED");
+              const success = await recordAction(targetEmployeeId, "PROJECT_COMPLETED");
+              if (success) {
+                toast({ title: "Gamificación", description: "¡50 puntos otorgados al técnico!" });
+              }
             } else {
               console.warn("⚠️ No se encontró a quién otorgar los puntos para el reporte:", reportId);
+              toast({ variant: "destructive", title: "Atención", description: "No se pudo identificar al técnico para dar los puntos." });
             }
          } catch(e) {
             console.error("Error updating project / gamification:", e);

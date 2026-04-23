@@ -367,22 +367,36 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
     prevNivelRef.current = nivel;
   }, [nivel, toast]);
 
-  // History feed: my reports
+  // History feed: actual points from database
   const historial = useMemo(() => {
+    const ptsHistory = (empleadoData?.puntos || [])
+      .map((p: any) => ({
+        id: p.ID_Punto,
+        type: "points" as const,
+        label: `✨ ${p.Motivo || "Acción premiada"}`,
+        sub: p.ID_Proyecto ? `Proyecto #${p.ID_Proyecto}` : "Actividad general",
+        date: p.Fecha_Asignacion,
+        pts: `+${p.Cantidad_Puntos} pts`,
+        color: "text-emerald-400",
+      }));
+    
+    // Fallback: also show recent reports even if they don't have points yet
     const myReports = (reportes || [])
+      .filter((r: any) => !ptsHistory.some((p: any) => p.sub.includes(String(r.ID_Proyecto))))
       .map((r: any) => ({
         id: r.ID_Reporte,
         type: "report" as const,
         label: r.estado === "Aprobado" ? "✅ Reporte aprobado" : r.estado === "Rechazado" ? "❌ Reporte rechazado" : "📤 Reporte enviado",
         sub: r.proyecto?.Nombre_Proyecto || "Sin proyecto",
         date: r.Fecha_Reporte,
-        pts: r.estado === "Aprobado" ? "+50 pts" : null,
+        pts: null,
         color: r.estado === "Aprobado" ? "text-emerald-400" : r.estado === "Rechazado" ? "text-red-400" : "text-yellow-400",
       }));
-    return myReports
+
+    return [...ptsHistory, ...myReports]
       .sort((a: any, b: any) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
       .slice(0, 8);
-  }, [reportes]);
+  }, [empleadoData, reportes]);
 
   const nombre = empleadoData?.Nombre || profile?.displayName || "Técnico";
 
