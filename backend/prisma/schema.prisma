@@ -113,7 +113,7 @@ model Reportes {
   Comentarios    String?
   Evidencias_URL String?
   Fecha_Reporte  DateTime           @default(now())
-  estado         String?            @default("Pendiente") // ← agrega esta línea
+  estado         String?            @default("Pendiente")
   ID_Empleado    Int?
   proyecto       Proyectos?         @relation(fields: [ID_Proyecto], references: [ID_Proyecto])
   equipo         Equipos?           @relation(fields: [ID_Equipo], references: [ID_Equipo])
