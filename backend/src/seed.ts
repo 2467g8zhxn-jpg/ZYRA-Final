@@ -59,19 +59,28 @@ async function main() {
     });
   }
 
-  await prisma.usuarios.upsert({
-    where: { Username: 'admin@zyra.com' },
-    update: {
-      Password_Hash: 'admin123',
-      ID_Rol: adminRol.ID_Rol
-    },
-    create: {
-      Username: 'admin@zyra.com',
-      Password_Hash: 'admin123',
-      ID_Empleado: adminEmpleado.ID_Empleado,
-      ID_Rol: adminRol.ID_Rol,
-    },
+  const existingAdmin = await prisma.usuarios.findFirst({
+    where: { Username: 'admin@zyra.com' }
   });
+
+  if (existingAdmin) {
+    await prisma.usuarios.update({
+      where: { ID_Usuario: existingAdmin.ID_Usuario },
+      data: {
+        Password_Hash: 'admin123',
+        ID_Rol: adminRol.ID_Rol
+      }
+    });
+  } else {
+    await prisma.usuarios.create({
+      data: {
+        Username: 'admin@zyra.com',
+        Password_Hash: 'admin123',
+        ID_Empleado: adminEmpleado.ID_Empleado,
+        ID_Rol: adminRol.ID_Rol,
+      },
+    });
+  }
 
   // 4. Servicios
   console.log('🛠️ Seeding services...');
