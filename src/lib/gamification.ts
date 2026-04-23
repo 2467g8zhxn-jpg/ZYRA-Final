@@ -27,9 +27,13 @@ export const recordAction = async (userId: string | number, action: string, meta
       points = 50;
       reason = "Proyecto Finalizado";
       break;
+    case "REPORT_SENT":
+      points = 50; // Recompensa directa por enviar el reporte
+      reason = "Reporte de Avance Enviado";
+      break;
     case "REPORT_APPROVED":
       points = 10;
-      reason = "Reporte Aprobado";
+      reason = "Reporte Aprobado por Admin";
       break;
     default:
       points = 5;

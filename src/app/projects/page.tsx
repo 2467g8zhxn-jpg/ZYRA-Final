@@ -367,12 +367,30 @@ export default function ProjectsPage() {
           Evidencias_URL: reportPhotos.length > 0 ? reportPhotos[0].dataUrl : "", 
           ID_Empleado: profile.ID_Empleado || profile.id
         };
-        await reportesAPI.create(baseReportData);
+        const createdReport = await reportesAPI.create(baseReportData);
         
         await projectsAPI.update(project.ID_Proyecto.toString(), {
           Estado: "EnRevision",
           Progreso: 50
         });
+
+        // OTORGAR PUNTOS AUTOMATICAMENTE AL ENVIAR
+        try {
+          const allEmps = await employeesAPI.getAll();
+          const myEmp = allEmps.find((e: any) => 
+            String(e.ID_Empleado) === String(profile?.ID_Empleado) ||
+            String(e.ID_Empleado) === String(profile?.id) ||
+            (e.Nombre?.toLowerCase().includes(profile?.displayName?.toLowerCase() || "")) ||
+            (e.usuario?.Username?.toLowerCase() === profile?.email?.toLowerCase())
+          );
+          
+          if (myEmp) {
+            await recordAction(myEmp.ID_Empleado, "REPORT_SENT", { reportId: createdReport.ID_Reporte });
+            toast({ title: "¡Puntos Ganados!", description: "Has recibido puntos por enviar tu reporte diario." });
+          }
+        } catch (err) {
+          console.warn("No se pudieron asignar puntos automáticos", err);
+        }
       }
       toast({ title: t.common.success });
       setIsSheetOpen(false);

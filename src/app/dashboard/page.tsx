@@ -555,12 +555,18 @@ export default function DashboardPage() {
           try {
             const allEmpleados = await employeesAPI.getAll();
             const myRecord = Array.isArray(allEmpleados)
-              ? allEmpleados.find((e: any) =>
-                  String(e.ID_Empleado) === String(profile?.ID_Empleado) ||
-                  String(e.ID_Empleado) === String(profile?.id) ||
-                  e.Nombre?.toLowerCase() === profile?.displayName?.toLowerCase() ||
-                  e.usuario?.Username?.toLowerCase() === profile?.email?.toLowerCase()
-                )
+              ? allEmpleados.find((e: any) => {
+                  const sqlName = e.Nombre?.toLowerCase() || "";
+                  const fbName = profile?.displayName?.toLowerCase() || "";
+                  const sqlUser = e.usuario?.Username?.toLowerCase() || "";
+                  const fbEmail = profile?.email?.toLowerCase() || "";
+                  
+                  return String(e.ID_Empleado) === String(profile?.ID_Empleado) ||
+                         String(e.ID_Empleado) === String(profile?.id) ||
+                         (fbName && sqlName.includes(fbName)) ||
+                         (fbEmail && sqlUser.includes(fbEmail.split('@')[0])) ||
+                         (fbEmail === sqlUser);
+                })
               : null;
             setEmpleadoData(myRecord || null);
           } catch (e) {

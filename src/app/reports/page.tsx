@@ -175,12 +175,16 @@ function ReportsContent() {
                  recipients = allEmps.filter((e: any) => e.ID_Equipo == report.ID_Equipo);
                }
                
-               // 3. Si falla, intentar por nombre de perfil (caso Lilian)
+               // 3. Si falla, intentar por nombre de perfil (Coincidencia parcial)
                if (recipients.length === 0) {
-                 recipients = allEmps.filter((e: any) => 
-                   e.Nombre?.toLowerCase().includes(profile?.displayName?.toLowerCase() || "lilian") ||
-                   e.usuario?.Username?.toLowerCase() === profile?.email?.toLowerCase()
-                 );
+                 const fbName = profile?.displayName?.toLowerCase() || "lilian";
+                 const fbEmail = profile?.email?.toLowerCase() || "";
+                 
+                 recipients = allEmps.filter((e: any) => {
+                   const sqlName = e.Nombre?.toLowerCase() || "";
+                   const sqlUser = e.usuario?.Username?.toLowerCase() || "";
+                   return sqlName.includes(fbName) || (fbEmail && sqlUser.includes(fbEmail.split('@')[0]));
+                 });
                }
 
                if (recipients.length > 0) {
