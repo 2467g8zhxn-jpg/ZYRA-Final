@@ -90,6 +90,7 @@ export default function ProjectsPage() {
   const [managedStatus, setManagedStatus] = useState("");
   const [managedProgress, setManagedProgress] = useState(0);
   const [managedTeamId, setManagedTeamId] = useState("no-team");
+  const [managedUbicacion, setManagedUbicacion] = useState("");
   const [savingManage, setSavingManage] = useState(false);
 
   // --- Operator / Report State ---
@@ -232,6 +233,7 @@ export default function ProjectsPage() {
     setManagedStatus(project.Estado || "Pendiente");
     setManagedProgress(project.Progreso || 0);
     setManagedTeamId(project.ID_Equipo?.toString() || "no-team");
+    setManagedUbicacion(project.Ubicacion || "");
     setIsManageDialogOpen(true);
   };
 
@@ -242,7 +244,8 @@ export default function ProjectsPage() {
       const payload: any = {
         Estado: managedStatus,
         Progreso: managedStatus === 'Finalizado' ? 100 : managedProgress,
-        ID_Equipo: managedTeamId === 'no-team' ? null : parseInt(managedTeamId)
+        ID_Equipo: managedTeamId === 'no-team' ? null : parseInt(managedTeamId),
+        Ubicacion: managedUbicacion || null
       };
       await projectsAPI.update(managedProject.ID_Proyecto.toString(), payload);
       toast({ title: t.common.success });
@@ -589,6 +592,7 @@ export default function ProjectsPage() {
             <div className="grid gap-4 py-4">
               <div className="space-y-1"><Label className="text-xs font-bold text-muted-foreground">Estado</Label><Select value={managedStatus} onValueChange={setManagedStatus}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Pendiente">Pendiente</SelectItem><SelectItem value="EnProceso">En Proceso</SelectItem><SelectItem value="EnRevision">Revisión</SelectItem><SelectItem value="Finalizado">Finalizado</SelectItem></SelectContent></Select></div>
               <div className="space-y-1"><Label className="text-xs font-bold text-muted-foreground">Equipo</Label><Select value={managedTeamId} onValueChange={setManagedTeamId}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="no-team">Sin Equipo</SelectItem>{sqlTeams?.map(t => <SelectItem key={t.ID_Equipo} value={t.ID_Equipo.toString()}>{t.Nombre_Equipo}</SelectItem>)}</SelectContent></Select></div>
+              <div className="space-y-1"><Label className="text-xs font-bold text-muted-foreground">📍 Dirección de Obra</Label><Input placeholder="Ej. Av. Principal 123, Colonia..." value={managedUbicacion} onChange={(e) => setManagedUbicacion(e.target.value)} /></div>
             </div>
             <DialogFooter><Button onClick={handleSaveManagement} className="w-full bg-accent text-white font-bold">Guardar</Button></DialogFooter>
           </DialogContent>
