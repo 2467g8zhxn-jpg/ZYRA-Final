@@ -507,13 +507,16 @@ export default function ProjectsPage() {
             
             let displayStatus = project.Estado || 'Pendiente';
 
-            // Si hay reportes pendientes o rechazados, eso manda
+            // Flujo corregido:
             if (hasPendingReport) {
               displayStatus = 'EnRevision';
             } else if (hasRejectedReport) {
               displayStatus = 'Rechazado';
-            } else if (!hasReports && displayStatus !== 'Finalizado' && displayStatus !== 'EnProceso') {
-              // Solo forzamos "Activo" (Iniciar Día) si no hay reportes Y no estamos ya en proceso
+            } else if (displayStatus === 'EnProceso') {
+              // Si ya inició el día, el botón dirá "Reportar Avance" aunque no haya reportes aún
+              displayStatus = 'EnProceso'; 
+            } else if (!hasReports && displayStatus !== 'Finalizado') {
+              // Si no hay reportes y NO ha iniciado día -> "Iniciar Día"
               displayStatus = 'Activo'; 
             }
             

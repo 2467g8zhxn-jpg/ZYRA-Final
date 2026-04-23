@@ -237,8 +237,19 @@ function ReportsContent() {
 
     setProcessingId(reportId);
     try {
+      // Obtener datos del reporte antes de borrarlo para saber de qué proyecto es
+      const reportToDelete = sqlReports.find(r => r.ID_Reporte.toString() === reportId.toString());
+
       await reportesAPI.delete(reportId);
-      toast({ title: t.common.success, description: "Reporte eliminado de SQL." });
+      
+      // Si el reporte pertenecía a un proyecto, regresamos el proyecto a "Activo" para que puedan volver a Iniciar Día
+      if (reportToDelete && reportToDelete.ID_Proyecto) {
+         await projectsAPI.update(reportToDelete.ID_Proyecto.toString(), {
+           Estado: "Activo"
+         });
+      }
+
+      toast({ title: t.common.success, description: "Reporte eliminado y proyecto reiniciado." });
       loadSqlData();
     } catch (e: any) {
       toast({ variant: "destructive", title: t.common.error });
