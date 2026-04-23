@@ -339,9 +339,20 @@ function AdminDashboard({ proyectos, reportes, empleados, materiales }: any) {
 function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
   const puntos   = empleadoData?.puntos?.reduce((s: number, p: any) => s + (p.Cantidad_Puntos || 0), 0) || 0;
   const nivel    = calcLevel(puntos);
-  const logros: any[] = [];
   const targetPts = nivel * 200;
   const pct      = Math.min(((puntos % 200) / 200) * 100, 100);
+
+  // Sistema de Logros Dinámico
+  const logros = useMemo(() => {
+    const list = [];
+    const approvedCount = (reportes || []).filter((r: any) => r.estado === "Aprobado").length;
+    
+    if (approvedCount >= 1) list.push("first_report");
+    if (approvedCount >= 5) list.push("photographer");
+    if ((reportes || []).some((r: any) => r.proyecto?.Estado === "Finalizado")) list.push("project_master");
+    
+    return list;
+  }, [reportes]);
 
   // Level-up celebration
   const prevNivelRef = useRef<number>(nivel);
@@ -419,7 +430,7 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
           <div className="p-3 rounded-full bg-yellow-500/10 mb-2">
             <Trophy className="h-6 w-6 text-yellow-400" />
           </div>
-          <p className="text-3xl font-black text-foreground">3</p>
+          <p className="text-3xl font-black text-foreground">{logros.length}</p>
           <p className="text-[9px] font-black uppercase tracking-widest text-yellow-400 mt-0.5">Logros</p>
         </Card>
       </div>
@@ -434,22 +445,22 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-5">
-            <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
-               <div className="bg-muted/30 border border-border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2">
-                 <ClipboardList className="h-6 w-6 text-accent" />
-                 <p className="text-[10px] font-black uppercase tracking-widest">Primer Reporte</p>
-                 <p className="text-[8px] font-bold text-accent uppercase tracking-widest">Obtenida</p>
-               </div>
-               <div className="bg-muted/30 border border-border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2">
-                 <Camera className="h-6 w-6 text-accent" />
-                 <p className="text-[10px] font-black uppercase tracking-widest">Fotógrafo</p>
-                 <p className="text-[8px] font-bold text-accent uppercase tracking-widest">Obtenida</p>
-               </div>
-               <div className="bg-muted/30 border border-border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2">
-                 <Trophy className="h-6 w-6 text-yellow-500" />
-                 <p className="text-[10px] font-black uppercase tracking-widest">Proyecto Completado</p>
-                 <p className="text-[8px] font-bold text-accent uppercase tracking-widest">Obtenida</p>
-               </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div className={cn("border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 transition-all", logros.includes("first_report") ? "bg-accent/10 border-accent/30" : "bg-muted/30 border-border opacity-50")}>
+                  <ClipboardList className={cn("h-6 w-6", logros.includes("first_report") ? "text-accent" : "text-muted-foreground")} />
+                  <p className="text-[10px] font-black uppercase tracking-widest">Primer Reporte</p>
+                  <p className="text-[8px] font-bold uppercase tracking-widest">{logros.includes("first_report") ? "Obtenida" : "Bloqueada"}</p>
+                </div>
+                <div className={cn("border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 transition-all", logros.includes("photographer") ? "bg-accent/10 border-accent/30" : "bg-muted/30 border-border opacity-50")}>
+                  <Camera className={cn("h-6 w-6", logros.includes("photographer") ? "text-accent" : "text-muted-foreground")} />
+                  <p className="text-[10px] font-black uppercase tracking-widest">Fotógrafo</p>
+                  <p className="text-[8px] font-bold uppercase tracking-widest">{logros.includes("photographer") ? "Obtenida" : "Bloqueada"}</p>
+                </div>
+                <div className={cn("border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 transition-all col-span-2", logros.includes("project_master") ? "bg-yellow-500/10 border-yellow-500/30" : "bg-muted/30 border-border opacity-50")}>
+                  <Trophy className={cn("h-6 w-6", logros.includes("project_master") ? "text-yellow-500" : "text-muted-foreground")} />
+                  <p className="text-[10px] font-black uppercase tracking-widest">Proyecto Completado</p>
+                  <p className="text-[8px] font-bold uppercase tracking-widest">{logros.includes("project_master") ? "Obtenida" : "Bloqueada"}</p>
+                </div>
             </div>
           </CardContent>
         </Card>
@@ -531,6 +542,8 @@ export default function DashboardPage() {
             const allEmpleados = await employeesAPI.getAll();
             const myRecord = Array.isArray(allEmpleados)
               ? allEmpleados.find((e: any) =>
+                  e.ID_Empleado === profile?.ID_Empleado ||
+                  e.ID_Empleado === profile?.id ||
                   e.Nombre?.toLowerCase() === profile?.displayName?.toLowerCase() ||
                   e.usuario?.Username === profile?.email
                 )
