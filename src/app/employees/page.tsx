@@ -49,7 +49,11 @@ export default function EmployeesPage() {
   // Cargar empleados desde SQL
   useEffect(() => {
     empleadosAPI.getAll()
-      .then((data: any) => setEmpleados(data))
+      .then((data: any) => setEmpleados(
+        (Array.isArray(data) ? data : []).filter(
+          (e: any) => !e.Nombre?.toLowerCase().includes('administrador')
+        )
+      ))
       .catch(() => toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los empleados" }))
       .finally(() => setLoadingData(false));
   }, []);
