@@ -149,13 +149,23 @@ export default function ProjectsPage() {
 
   const filteredProjects = useMemo(() => {
     return sqlProjects.filter((p: any) => {
+      // Filtro de búsqueda y estado
       const matchesSearch = searchTerm === "" ||
         p.Nombre_Proyecto?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.cliente?.Nombre?.toLowerCase().includes(searchTerm.toLowerCase());
       const isStatusMatch = statusFilter === "all" || p.Estado === statusFilter;
-      return matchesSearch && isStatusMatch;
+
+      // Filtro de seguridad: Operativos solo ven sus proyectos
+      let isTeamMatch = true;
+      if (!isAdmin && profile?.empleadoId) {
+        // Buscamos si el empleado logueado está en el equipo asignado a este proyecto
+        const teamOfProject = sqlTeams.find((t: any) => t.ID_Equipo === p.ID_Equipo);
+        isTeamMatch = teamOfProject?.empleados?.some((rel: any) => rel.ID_Empleado === profile.empleadoId);
+      }
+
+      return matchesSearch && isStatusMatch && isTeamMatch;
     });
-  }, [sqlProjects, searchTerm, statusFilter]);
+  }, [sqlProjects, searchTerm, statusFilter, isAdmin, profile, sqlTeams]);
 
   // --- Handlers ---
   const handleCreateProject = async () => {

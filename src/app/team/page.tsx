@@ -91,7 +91,14 @@ export default function TeamPage() {
         equiposAPI.getAll(),
         empleadosAPI.getAll()
       ]);
-      setTeams(Array.isArray(teamsData) ? teamsData : []);
+      let filteredTeams = Array.isArray(teamsData) ? teamsData : [];
+      if (!isAdmin && profile?.empleadoId) {
+        filteredTeams = filteredTeams.filter((team: any) => 
+          team.empleados?.some((rel: any) => rel.ID_Empleado === profile.empleadoId)
+        );
+      }
+      setTeams(filteredTeams);
+
       setEmployees(Array.isArray(employeesData) ? employeesData.filter(e => 
         !e.Nombre.toLowerCase().includes('admin') && 
         e.usuario?.rol?.Nombre_Rol !== 'admin'
