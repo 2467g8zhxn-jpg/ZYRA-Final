@@ -288,7 +288,7 @@ function ReportsContent() {
             <>
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold text-accent flex items-center gap-2">
-                  <Briefcase className="h-6 w-6" /> {selectedReport.projectName}
+                  <Briefcase className="h-6 w-6" /> {selectedReport.proyecto?.Nombre_Proyecto || "Auditoría de Reporte"}
                 </DialogTitle>
                 <DialogDescription className="text-muted-foreground">{t.reports.audit_detail}</DialogDescription>
               </DialogHeader>
@@ -301,7 +301,7 @@ function ReportsContent() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Building2 className="h-3.5 w-3.5 text-accent" />
-                        <span className="font-semibold text-foreground">{selectedReport.proyecto?.cliente?.Nombre || "-"}</span>
+                        <span className="font-semibold text-foreground">{selectedReport.proyecto?.Nombre_Proyecto || "-"}</span>
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <MapPin className="h-3.5 w-3.5 text-accent" />
@@ -309,7 +309,7 @@ function ReportsContent() {
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <CalendarDays className="h-3.5 w-3.5 text-accent" />
-                        <span>{formatDate(selectedReport.proyecto?.Fecha_Creacion, "PPP")}</span>
+                        <span>{formatDate(selectedReport.Fecha_Reporte, "PPP")}</span>
                       </div>
                     </div>
                   </div>
