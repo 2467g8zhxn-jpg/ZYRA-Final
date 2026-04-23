@@ -50,7 +50,7 @@ export const prisma = new PrismaClient();
 // Middleware
 app.use(
     cors({
-        origin: process.env.FRONTEND_URL || "http://localhost:9002",
+        origin: true,
         credentials: true,
     }),
 );
