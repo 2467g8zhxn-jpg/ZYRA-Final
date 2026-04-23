@@ -37,8 +37,14 @@ async function main() {
     },
   });
 
-  // 3. Empleados & Usuarios (Default Admin)
-  console.log('👤 Seeding default admin user...');
+  // 3. Limpieza de usuarios viejos y creación de Admin
+  console.log('👤 Cleaning up old users and creating admin@zyra.com...');
+  
+  // Borrar cualquier usuario que no sea el que queremos
+  await prisma.usuarios.deleteMany({
+    where: { Username: { not: 'admin@zyra.com' } }
+  });
+
   const adminEmail = 'admin@zyra.com';
   let adminEmpleado = await prisma.empleados.findFirst({ where: { Correo: adminEmail } });
   
@@ -53,17 +59,19 @@ async function main() {
     });
   }
 
-  const existingAdminUser = await prisma.usuarios.findFirst({ where: { Username: 'admin@zyra.com' } });
-  if (!existingAdminUser) {
-    await prisma.usuarios.create({
-      data: {
-        Username: 'admin@zyra.com',
-        Password_Hash: 'admin123',
-        ID_Empleado: adminEmpleado.ID_Empleado,
-        ID_Rol: adminRol.ID_Rol,
-      },
-    });
-  }
+  await prisma.usuarios.upsert({
+    where: { Username: 'admin@zyra.com' },
+    update: {
+      Password_Hash: 'admin123',
+      ID_Rol: adminRol.ID_Rol
+    },
+    create: {
+      Username: 'admin@zyra.com',
+      Password_Hash: 'admin123',
+      ID_Empleado: adminEmpleado.ID_Empleado,
+      ID_Rol: adminRol.ID_Rol,
+    },
+  });
 
   // 4. Servicios
   console.log('🛠️ Seeding services...');
