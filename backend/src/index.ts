@@ -95,9 +95,25 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 // Start server
-app.listen(port, () => {
+app.listen(port, async () => {
     console.log(`🚀 ZYRA Backend listening on port ${port}`);
-    console.log(`📍 Environment: ${process.env.NODE_ENV}`);
+    
+    // Inicialización automática de servicios base si no existen
+    try {
+        const count = await prisma.servicios.count();
+        if (count === 0) {
+            console.log("🌱 Inicializando servicios por defecto...");
+            await prisma.servicios.createMany({
+                data: [
+                    { Tipo: 'Instalación', Descripcion: 'Proyectos de obra nueva', ID_Empresa: 1 },
+                    { Tipo: 'Mantenimiento', Descripcion: 'Limpieza y revisión', ID_Empresa: 1 }
+                ]
+            });
+            console.log("✅ Servicios base creados.");
+        }
+    } catch (err) {
+        console.warn("⚠️ No se pudo inicializar los servicios base (esto es normal si la tabla ya tiene datos o la empresa no existe aún).");
+    }
 });
 
 // Graceful shutdown
