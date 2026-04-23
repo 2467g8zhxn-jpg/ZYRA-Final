@@ -400,7 +400,8 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
         color: r.estado === "Aprobado" ? "text-emerald-400" : r.estado === "Rechazado" ? "text-red-400" : "text-yellow-400",
       }));
 
-    return [...ptsHistory, ...myReports]
+    // Solo mostrar historial real de Puntos_Historial (no reportes sin puntos)
+    return [...ptsHistory]
       .sort((a: any, b: any) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
       .slice(0, 8);
   }, [empleadoData, reportes]);
@@ -415,17 +416,6 @@ function EmployeeDashboard({ profile, reportes, empleadoData }: any) {
           <h2 className="text-3xl font-black tracking-tight text-foreground">
             ¡Hola, <span className="text-accent">{nombre.split(" ")[0]}</span>! 👋
           </h2>
-          <button
-            onClick={async () => {
-              if (empleadoData?.ID_Empleado) {
-                await recordAction(empleadoData.ID_Empleado, "REPORT_SENT");
-                window.location.reload();
-              }
-            }}
-            className="text-[10px] bg-accent/10 text-accent px-3 py-1 rounded-full font-black uppercase tracking-widest hover:bg-accent/20 transition-all"
-          >
-            Sincronizar Puntos 🔄
-          </button>
         </div>
         <p className="text-sm text-muted-foreground mt-1">Tu progreso y actividad reciente.</p>
       </div>

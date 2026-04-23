@@ -63,7 +63,8 @@ router.post('/login', async (req: Request, res: Response) => {
                 email: user.Username,
                 displayName: user.empleado?.Nombre || user.Username,
                 rol: user.rol?.Nombre_Rol?.toLowerCase() || 'tecnico',
-                photoURL: null
+                photoURL: null,
+                empleadoId: user.ID_Empleado  // ← CRÍTICO para gamificación
             }
         });
 

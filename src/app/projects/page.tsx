@@ -359,14 +359,14 @@ export default function ProjectsPage() {
       } else {
         // CREATE new report
         // Buscar ID_Empleado real (SQL) antes de crear
-        let sqlEmployeeId = profile.ID_Empleado;
+        // Buscar ID_Empleado real (SQL) antes de crear
+        // profile.empleadoId viene directo del login — es el ID numérico de SQL
+        let sqlEmployeeId: number | null = profile?.empleadoId || null;
         if (!sqlEmployeeId) {
           try {
             const allEmps = await employeesAPI.getAll();
             const myEmp = allEmps.find((e: any) =>
-              e.usuario?.FirebaseUID === profile?.uid ||
-              e.usuario?.Username?.toLowerCase() === profile?.email?.toLowerCase() ||
-              e.Nombre?.toLowerCase().includes(profile?.displayName?.toLowerCase() || "")
+              e.usuario?.Username?.toLowerCase() === (profile?.email || "").toLowerCase()
             );
             if (myEmp) sqlEmployeeId = myEmp.ID_Empleado;
           } catch (e) { console.warn("Error buscando ID SQL", e); }
@@ -389,21 +389,17 @@ export default function ProjectsPage() {
         });
 
         // OTORGAR PUNTOS AUTOMATICAMENTE AL ENVIAR
-        try {
-          const allEmps = await employeesAPI.getAll();
-          const myEmp = allEmps.find((e: any) =>
-            String(e.ID_Empleado) === String(profile?.ID_Empleado) ||
-            String(e.ID_Empleado) === String(profile?.id) ||
-            (e.Nombre?.toLowerCase().includes(profile?.displayName?.toLowerCase() || "")) ||
-            (e.usuario?.Username?.toLowerCase() === profile?.email?.toLowerCase())
-          );
-
-          if (myEmp) {
-            await recordAction(myEmp.ID_Empleado, "REPORT_SENT", { reportId: createdReport.ID_Reporte });
-            toast({ title: "¡Puntos Ganados!", description: "Has recibido puntos por enviar tu reporte diario." });
+        // Usamos sqlEmployeeId que ya fue calculado correctamente arriba
+        if (sqlEmployeeId) {
+          try {
+            await recordAction(sqlEmployeeId, "REPORT_SENT", { reportId: createdReport?.ID_Reporte });
+            console.log("✅ Puntos otorgados a empleado ID:", sqlEmployeeId);
+            toast({ title: "¡Puntos Ganados! 🎉", description: "Has recibido 50 puntos por tu reporte diario." });
+          } catch (err) {
+            console.warn("No se pudieron asignar puntos automáticos", err);
           }
-        } catch (err) {
-          console.warn("No se pudieron asignar puntos automáticos", err);
+        } else {
+          console.warn("⚠️ No se encontró sqlEmployeeId para otorgar puntos");
         }
       }
       toast({ title: t.common.success });
