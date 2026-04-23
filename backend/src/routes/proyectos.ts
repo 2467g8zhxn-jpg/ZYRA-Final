@@ -61,7 +61,9 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 // PUT /api/proyectos/:id - Actualizar proyecto
 router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { Nombre_Proyecto, ID_Cliente, ID_Servicio, ID_Equipo, Fecha_Inicio, Fecha_Fin, Estado } = req.body;
+    const { Nombre_Proyecto, ID_Cliente, ID_Servicio, ID_Equipo, Fecha_Inicio, Fecha_Fin, Estado, materiales } = req.body;
+    
+    // Actualizar datos básicos
     const proyecto = await prisma.proyectos.update({
       where: { ID_Proyecto: parseInt(req.params.id) },
       data: {
@@ -75,6 +77,26 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
       },
       include: { cliente: true, servicio: true, equipo: true }
     });
+
+    // Si vienen materiales, creamos el checklist inicial automáticamente
+    if (materiales && materiales.length > 0) {
+      const checklist = await prisma.checklist.create({
+        data: {
+          ID_Proyecto: proyecto.ID_Proyecto,
+          Estado: 'Pendiente',
+          detalles: {
+            create: materiales.map((m: any) => ({
+              ID_Material: m.ID_Material,
+              Cantidad_Requerida: m.quantity || m.Cantidad_Requerida,
+              Cantidad_Cargada: 0,
+              Marcado: false
+            }))
+          }
+        }
+      });
+      console.log(`✅ Checklist inicial creado para proyecto ${proyecto.ID_Proyecto}`);
+    }
+
     res.json(proyecto);
   } catch (error) { errorHandler(error, req, res, () => { }); }
 });
