@@ -438,7 +438,7 @@ export default function ClientsPage() {
                           </h4>
                           <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-bold uppercase">
                             <MapPin className="h-3 w-3 text-accent" />
-                            <span className="truncate max-w-[250px]">{project.Direccion || "Sin dirección"}</span>
+                            <span className="truncate max-w-[250px]">{project.Ubicacion || "Sin dirección"}</span>
                           </div>
                         </div>
                       </div>

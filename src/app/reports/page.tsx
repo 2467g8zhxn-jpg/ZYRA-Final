@@ -88,7 +88,7 @@ function ReportsContent() {
       setIsApiLoading(true);
       const [rData, pData, tData] = await Promise.all([
         reportesAPI.getAll(),
-        proyectosAPI.getAll(),
+        projectsAPI.getAll(),
         equiposAPI.getAll()
       ]);
       setSqlReports(Array.isArray(rData) ? rData : []);

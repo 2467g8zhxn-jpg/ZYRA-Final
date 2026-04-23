@@ -92,7 +92,7 @@ export default function TeamPage() {
         empleadosAPI.getAll()
       ]);
       setTeams(Array.isArray(teamsData) ? teamsData : []);
-      setEmployees(Array.isArray(employeesData) ? employeesData : []);
+      setEmployees(Array.isArray(employeesData) ? employeesData.filter(e => !e.Nombre.toLowerCase().includes('administrador')) : []);
     } catch (e: any) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo cargar la información de equipos" });
     } finally {
