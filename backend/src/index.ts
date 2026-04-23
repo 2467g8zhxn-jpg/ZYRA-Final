@@ -3,15 +3,15 @@ import cors from "cors";
 import dotenv from "dotenv";
 import admin from "firebase-admin";
 import { PrismaClient } from "@prisma/client";
-import clientesRouter from './routes/clientes';
-import empleadosRouter from './routes/empleados';
-import equiposRouter from './routes/equipos';
-import userRoutes from "./routes/users";
-import authRoutes from "./routes/auth";
-import projectRoutes from "./routes/proyectos";
-import reportRoutes from "./routes/reports";
-import materialRoutes from "./routes/materiales";
-import checklistServicioRouter from './routes/checklist_servicio';
+import clientesRouter from './routes/clientes.js';
+import empleadosRouter from './routes/empleados.js';
+import equiposRouter from './routes/equipos.js';
+import userRoutes from "./routes/users.js";
+import authRoutes from "./routes/auth.js";
+import projectRoutes from "./routes/proyectos.js";
+import reportRoutes from "./routes/reports.js";
+import materialRoutes from "./routes/materiales.js";
+import checklistServicioRouter from './routes/checklist_servicio.js';
 
 dotenv.config();
 
