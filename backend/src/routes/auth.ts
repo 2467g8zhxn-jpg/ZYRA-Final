@@ -9,11 +9,15 @@ router.post('/login', async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;
 
+        console.log('[AUTH] Login attempt — email:', email, '| password provided:', !!password);
+
         if (!email || !password) {
+            console.log('[AUTH] Missing email or password — aborting');
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
         // Buscar el usuario por Username (el campo en la BD que actúa como correo/email)
+        console.log('[AUTH] Searching for user with Username:', email);
         const user = await prisma.usuarios.findFirst({
             where: { Username: email },
             include: {
@@ -23,11 +27,18 @@ router.post('/login', async (req: Request, res: Response) => {
         });
 
         if (!user) {
+            console.log('[AUTH] No user found for Username:', email);
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
+        console.log('[AUTH] User found — ID:', user.ID_Usuario, '| Username:', user.Username, '| Rol:', user.rol?.Nombre_Rol ?? 'none');
+
         // En un sistema real usaríamos bcrypt, pero aquí verificamos como está guardado
-        if (user.Password_Hash !== password) {
+        const passwordMatch = user.Password_Hash === password;
+        console.log('[AUTH] Password comparison result:', passwordMatch, '| Stored hash length:', user.Password_Hash?.length, '| Provided password length:', password.length);
+
+        if (!passwordMatch) {
+            console.log('[AUTH] Password mismatch for user:', email);
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
@@ -57,7 +68,10 @@ router.post('/login', async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        console.error("Login error:", error);
+        console.error('[AUTH] Unexpected error during login:', error);
+        if (error instanceof Error) {
+            console.error('[AUTH] Error name:', error.name, '| message:', error.message);
+        }
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
