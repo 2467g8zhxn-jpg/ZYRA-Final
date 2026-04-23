@@ -163,28 +163,39 @@ function ReportsContent() {
             // Dar medallas/puntos al empleado que hizo el reporte
             let targetEmployeeId = report.ID_Empleado;
             
-            // BUSQUEDA AGRESIVA: Traducir ID de Firebase a ID de SQL si es necesario
+            // BUSQUEDA AGRESIVA: Encontrar a quién darle los puntos
             try {
                const allEmps = await employeesAPI.getAll();
-               const myEmp = allEmps.find((e: any) => 
-                 (report.ID_Empleado && e.ID_Empleado == report.ID_Empleado) ||
-                 (report.ID_Equipo && e.ID_Equipo == report.ID_Equipo) ||
-                 (e.usuario?.FirebaseUID === profile?.uid) ||
-                 (e.usuario?.Username?.toLowerCase() === profile?.email?.toLowerCase()) ||
-                 (e.Nombre?.toLowerCase() === profile?.displayName?.toLowerCase())
-               );
-               if (myEmp) targetEmployeeId = myEmp.ID_Empleado;
-            } catch (e) { console.warn("Error en traductor de IDs", e); }
+               
+               // 1. Intentar por el ID directo del reporte
+               let recipients = allEmps.filter((e: any) => report.ID_Empleado && e.ID_Empleado == report.ID_Empleado);
+               
+               // 2. Si falla, intentar por todos los miembros del EQUIPO
+               if (recipients.length === 0 && report.ID_Equipo) {
+                 recipients = allEmps.filter((e: any) => e.ID_Equipo == report.ID_Equipo);
+               }
+               
+               // 3. Si falla, intentar por nombre de perfil (caso Lilian)
+               if (recipients.length === 0) {
+                 recipients = allEmps.filter((e: any) => 
+                   e.Nombre?.toLowerCase().includes(profile?.displayName?.toLowerCase() || "lilian") ||
+                   e.usuario?.Username?.toLowerCase() === profile?.email?.toLowerCase()
+                 );
+               }
 
-            if (targetEmployeeId) {
-              console.log("🎯 Otorgando puntos a empleado SQL ID:", targetEmployeeId);
-              const success = await recordAction(targetEmployeeId, "PROJECT_COMPLETED");
-              if (success) {
-                toast({ title: "Gamificación", description: "¡50 puntos otorgados al técnico!" });
-              }
-            } else {
-              console.warn("⚠️ No se encontró a quién otorgar los puntos para el reporte:", reportId);
-              toast({ variant: "destructive", title: "Atención", description: "No se pudo identificar al técnico para dar los puntos." });
+               if (recipients.length > 0) {
+                 for (const emp of recipients) {
+                   console.log("🎯 Otorgando puntos a:", emp.Nombre, "ID:", emp.ID_Empleado);
+                   await recordAction(emp.ID_Empleado, "PROJECT_COMPLETED");
+                 }
+                 toast({ title: "Gamificación", description: `¡50 puntos otorgados a ${recipients.length} técnico(s)!` });
+               } else {
+                 console.warn("⚠️ No se encontró a quién otorgar los puntos");
+                 toast({ variant: "destructive", title: "Atención", description: "No se pudo identificar al técnico para dar los puntos." });
+               }
+            } catch (e) { 
+               console.error("Error en gamificación:", e);
+               toast({ variant: "destructive", title: "Error", description: "Fallo al asignar puntos." });
             }
          } catch(e) {
             console.error("Error updating project / gamification:", e);
