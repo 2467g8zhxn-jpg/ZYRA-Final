@@ -414,14 +414,46 @@ export default function ProjectsPage() {
                 <DialogHeader><DialogTitle>{t.projects.new_project}</DialogTitle></DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1"><Label className="text-xs font-bold text-muted-foreground">Nombre</Label><Input value={newProject.Pry_Nombre_Proyecto} onChange={(e) => setNewProject({ ...newProject, Pry_Nombre_Proyecto: e.target.value })} /></div>
-                    <div className="space-y-1"><Label className="text-xs font-bold text-muted-foreground">Cliente</Label><Select value={newProject.clientId} onValueChange={(val) => setNewProject({ ...newProject, clientId: val })}><SelectTrigger><SelectValue placeholder="Cliente" /></SelectTrigger><SelectContent>{sqlClients?.map(c => <SelectItem key={c.ID_Cliente} value={c.ID_Cliente.toString()}>{c.Nombre}</SelectItem>)}</SelectContent></Select></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-muted-foreground uppercase">NOMBRE</Label><Input value={newProject.Pry_Nombre_Proyecto} onChange={(e) => setNewProject({ ...newProject, Pry_Nombre_Proyecto: e.target.value })} /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-muted-foreground uppercase">CLIENTE</Label><Select value={newProject.clientId} onValueChange={(val) => setNewProject({ ...newProject, clientId: val })}><SelectTrigger><SelectValue placeholder="Selecciona Cliente" /></SelectTrigger><SelectContent>{sqlClients?.map(c => <SelectItem key={c.ID_Cliente} value={c.ID_Cliente.toString()}>{c.Nombre}</SelectItem>)}</SelectContent></Select></div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1"><Label className="text-xs font-bold text-muted-foreground">Servicio</Label><Select value={newProject.serviceType} onValueChange={(val) => setNewProject({ ...newProject, serviceType: val })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Instalación">Instalación</SelectItem><SelectItem value="Mantenimiento">Mantenimiento</SelectItem></SelectContent></Select></div>
-                    <div className="space-y-1"><Label className="text-xs font-bold text-muted-foreground">Equipo</Label><Select value={newProject.assignedTeamId} onValueChange={(val) => setNewProject({ ...newProject, assignedTeamId: val })}><SelectTrigger><SelectValue placeholder="Equipo" /></SelectTrigger><SelectContent><SelectItem value="no-team">Sin Equipo</SelectItem>{sqlTeams?.map(t => <SelectItem key={t.ID_Equipo} value={t.ID_Equipo.toString()}>{t.Nombre_Equipo}</SelectItem>)}</SelectContent></Select></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-muted-foreground uppercase">SERVICIO</Label><Select value={newProject.serviceType} onValueChange={(val) => setNewProject({ ...newProject, serviceType: val })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Instalación">Instalación</SelectItem><SelectItem value="Mantenimiento">Mantenimiento</SelectItem></SelectContent></Select></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-muted-foreground uppercase">EQUIPO (EQ)</Label><Select value={newProject.assignedTeamId} onValueChange={(val) => setNewProject({ ...newProject, assignedTeamId: val })}><SelectTrigger><SelectValue placeholder="SIN EQUIPO ASIGNADO" /></SelectTrigger><SelectContent><SelectItem value="no-team">SIN EQUIPO ASIGNADO</SelectItem>{sqlTeams?.map(t => <SelectItem key={t.ID_Equipo} value={t.ID_Equipo.toString()}>{t.Nombre_Equipo}</SelectItem>)}</SelectContent></Select></div>
                   </div>
-                  <div className="space-y-1"><Label className="text-xs font-bold text-muted-foreground">Ubicación</Label><Input value={newProject.customAddress} onChange={(e) => setNewProject({ ...newProject, customAddress: e.target.value })} /></div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-muted-foreground uppercase">DIRECCIÓN DE OBRA</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Button 
+                        variant={newProject.addressType === "client" ? "default" : "outline"} 
+                        className={newProject.addressType === "client" ? "bg-accent text-white" : "border-border text-muted-foreground"}
+                        onClick={() => setNewProject({ ...newProject, addressType: "client" })}
+                      >
+                        📍 Del Cliente
+                      </Button>
+                      <Button 
+                        variant={newProject.addressType === "custom" ? "default" : "outline"} 
+                        className={newProject.addressType === "custom" ? "bg-accent text-white" : "border-border text-muted-foreground"}
+                        onClick={() => setNewProject({ ...newProject, addressType: "custom" })}
+                      >
+                        ✏️ Personalizada
+                      </Button>
+                    </div>
+                    {newProject.addressType === "client" ? (
+                      <Input 
+                        disabled 
+                        placeholder="Selecciona un cliente para autocompletar" 
+                        value={newProject.clientId ? sqlClients?.find((c: any) => c.ID_Cliente.toString() === newProject.clientId)?.Direccion || "Sin dirección registrada" : ""}
+                        className="bg-card/50"
+                      />
+                    ) : (
+                      <Input 
+                        placeholder="Escribe la dirección exacta" 
+                        value={newProject.customAddress} 
+                        onChange={(e) => setNewProject({ ...newProject, customAddress: e.target.value })} 
+                      />
+                    )}
+                  </div>
                 </div>
                 <DialogFooter><Button className="w-full bg-accent text-white" onClick={handleCreateProject} disabled={loading}>{t.common.create}</Button></DialogFooter>
               </DialogContent>

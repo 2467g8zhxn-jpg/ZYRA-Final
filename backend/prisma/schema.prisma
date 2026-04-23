@@ -94,6 +94,8 @@ model Proyectos {
   Fecha_Inicio    DateTime?          @db.Date
   Fecha_Fin       DateTime?          @db.Date
   Estado          String?            @db.VarChar(30)
+  Ubicacion       String?            @db.VarChar(255)
+  Imagen_Url      String?
   cliente         Clientes?          @relation(fields: [ID_Cliente], references: [ID_Cliente])
   servicio        Servicios?         @relation(fields: [ID_Servicio], references: [ID_Servicio])
   equipo          Equipos?           @relation(fields: [ID_Equipo], references: [ID_Equipo])

@@ -40,7 +40,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // POST /api/proyectos - Crear proyecto
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { Nombre_Proyecto, ID_Cliente, ID_Servicio, ID_Equipo, Fecha_Inicio, Fecha_Fin, Estado, Tipo_Servicio } = req.body;
+    const { Nombre_Proyecto, ID_Cliente, ID_Servicio, ID_Equipo, Fecha_Inicio, Fecha_Fin, Estado, Tipo_Servicio, Imagen_Url, Ubicacion } = req.body;
     if (!Nombre_Proyecto) return res.status(400).json({ error: 'Nombre es requerido' });
 
     let finalIdServicio = ID_Servicio ? parseInt(ID_Servicio) : null;
@@ -58,6 +58,8 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
         Fecha_Inicio: Fecha_Inicio ? new Date(Fecha_Inicio) : null,
         Fecha_Fin: Fecha_Fin ? new Date(Fecha_Fin) : null,
         Estado: Estado || 'Planificación',
+        Imagen_Url: Imagen_Url || null,
+        Ubicacion: Ubicacion || null,
       },
       include: { cliente: true, servicio: true, equipo: true }
     });
@@ -68,7 +70,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 // PUT /api/proyectos/:id - Actualizar proyecto
 router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { Nombre_Proyecto, ID_Cliente, ID_Servicio, ID_Equipo, Fecha_Inicio, Fecha_Fin, Estado, materiales } = req.body;
+    const { Nombre_Proyecto, ID_Cliente, ID_Servicio, ID_Equipo, Fecha_Inicio, Fecha_Fin, Estado, materiales, Imagen_Url, Ubicacion } = req.body;
 
     // Actualizar datos básicos
     const proyecto = await prisma.proyectos.update({
@@ -81,6 +83,8 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
         ...(Fecha_Inicio && { Fecha_Inicio: new Date(Fecha_Inicio) }),
         ...(Fecha_Fin && { Fecha_Fin: new Date(Fecha_Fin) }),
         ...(Estado && { Estado }),
+        ...(Imagen_Url !== undefined && { Imagen_Url }),
+        ...(Ubicacion !== undefined && { Ubicacion }),
       },
       include: { cliente: true, servicio: true, equipo: true }
     });
