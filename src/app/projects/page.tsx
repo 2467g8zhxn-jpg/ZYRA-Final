@@ -501,18 +501,19 @@ export default function ProjectsPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredProjects.map((project: any) => {
             const projectReports = sqlReports.filter(r => r.ID_Proyecto === project.ID_Proyecto);
+            const hasReports = projectReports.length > 0;
             const hasPendingReport = projectReports.some(r => r.estado === 'Pendiente');
             const hasRejectedReport = projectReports.some(r => r.estado === 'Rechazado');
             
-            // Prioridad: Si hay reporte pendiente -> En Revisión. Si hay rechazado -> Corregir. 
-            // Si el estado dice EnRevision pero NO hay reporte pendiente, lo tratamos como EnProceso (seguro)
             let displayStatus = project.Estado || 'Pendiente';
-            if (hasPendingReport) {
+
+            // Si no hay reportes en absoluto y el proyecto no está finalizado, permitimos "Iniciar Día"
+            if (!hasReports && displayStatus !== 'Finalizado') {
+              displayStatus = 'Activo'; 
+            } else if (hasPendingReport) {
               displayStatus = 'EnRevision';
             } else if (hasRejectedReport) {
               displayStatus = 'Rechazado';
-            } else if (displayStatus === 'EnRevision') {
-              displayStatus = 'EnProceso'; // ← Seguro para desbloquear proyectos sin reportes
             }
             
             const isEnCurso = displayStatus === 'EnProceso' || displayStatus === 'Rechazado';
@@ -581,6 +582,11 @@ export default function ProjectsPage() {
 
                         let mRaw = project.projectMaterials || [];
                         let mats = Array.isArray(mRaw) ? mRaw : (typeof mRaw === 'string' ? JSON.parse(mRaw) : []);
+
+                        // Si no hay reportes, reseteamos el checklist para empezar de cero
+                        if (projectReports.length === 0) {
+                          mats = mats.map((m: any) => ({ ...m, done: false }));
+                        }
 
                         if (mats.length === 0) {
                           const type = (project.Tipo_Servicio || "").toLowerCase();
