@@ -113,13 +113,21 @@ router.post('/:id/puntos', async (req: Request, res: Response) => {
         
         if (!puntos) return res.status(400).json({ error: 'Faltan puntos' });
 
+        const empId = parseInt(id);
+        const pts = parseInt(puntos);
+        
+        if (isNaN(empId) || isNaN(pts)) {
+            return res.status(400).json({ error: 'IDs o puntos inválidos' });
+        }
+
         const history = await prisma.puntos_Historial.create({
             data: {
-                ID_Empleado: parseInt(id),
-                Cantidad_Puntos: parseInt(puntos),
+                ID_Empleado: empId,
+                Cantidad_Puntos: pts,
                 Motivo: motivo || 'Acción',
                 ID_Proyecto: (projectId && !isNaN(parseInt(projectId))) ? parseInt(projectId) : null,
                 ID_Reporte: (reportId && !isNaN(parseInt(reportId))) ? parseInt(reportId) : null,
+                Fecha_Asignacion: new Date()
             }
         });
 
