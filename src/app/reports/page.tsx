@@ -163,21 +163,21 @@ function ReportsContent() {
             // Dar medallas/puntos al empleado que hizo el reporte
             let targetEmployeeId = report.ID_Empleado;
             
-            // Si el reporte no tiene empleado (reportes antiguos), buscamos al técnico del proyecto/equipo
-            if (!targetEmployeeId) {
-               try {
-                  const allEmps = await employeesAPI.getAll();
-                  // Usamos == para ignorar si uno es string y otro es int
-                  const teamEmp = allEmps.find((e: any) => 
-                    (report.ID_Equipo && e.ID_Equipo == report.ID_Equipo) ||
-                    (e.Nombre?.toLowerCase() === profile?.displayName?.toLowerCase())
-                  );
-                  if (teamEmp) targetEmployeeId = teamEmp.ID_Empleado;
-               } catch (e) { console.warn("No se pudo autodetectar empleado", e); }
-            }
+            // BUSQUEDA AGRESIVA: Traducir ID de Firebase a ID de SQL si es necesario
+            try {
+               const allEmps = await employeesAPI.getAll();
+               const myEmp = allEmps.find((e: any) => 
+                 (report.ID_Empleado && e.ID_Empleado == report.ID_Empleado) ||
+                 (report.ID_Equipo && e.ID_Equipo == report.ID_Equipo) ||
+                 (e.usuario?.FirebaseUID === profile?.uid) ||
+                 (e.usuario?.Username?.toLowerCase() === profile?.email?.toLowerCase()) ||
+                 (e.Nombre?.toLowerCase() === profile?.displayName?.toLowerCase())
+               );
+               if (myEmp) targetEmployeeId = myEmp.ID_Empleado;
+            } catch (e) { console.warn("Error en traductor de IDs", e); }
 
             if (targetEmployeeId) {
-              console.log("🎯 Otorgando puntos a empleado ID:", targetEmployeeId);
+              console.log("🎯 Otorgando puntos a empleado SQL ID:", targetEmployeeId);
               const success = await recordAction(targetEmployeeId, "PROJECT_COMPLETED");
               if (success) {
                 toast({ title: "Gamificación", description: "¡50 puntos otorgados al técnico!" });
