@@ -34,6 +34,7 @@ model Empleados {
   equipos          Empleado_Equipo[]
   checklist_detalle Checklist_Detalle[]
   puntos           Puntos_Historial[]
+  reportes         Reportes[]
 }
 
 model Usuarios {
