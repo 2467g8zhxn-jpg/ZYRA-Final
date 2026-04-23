@@ -507,13 +507,14 @@ export default function ProjectsPage() {
             
             let displayStatus = project.Estado || 'Pendiente';
 
-            // Si no hay reportes en absoluto y el proyecto no está finalizado, permitimos "Iniciar Día"
-            if (!hasReports && displayStatus !== 'Finalizado') {
-              displayStatus = 'Activo'; 
-            } else if (hasPendingReport) {
+            // Si hay reportes pendientes o rechazados, eso manda
+            if (hasPendingReport) {
               displayStatus = 'EnRevision';
             } else if (hasRejectedReport) {
               displayStatus = 'Rechazado';
+            } else if (!hasReports && displayStatus !== 'Finalizado' && displayStatus !== 'EnProceso') {
+              // Solo forzamos "Activo" (Iniciar Día) si no hay reportes Y no estamos ya en proceso
+              displayStatus = 'Activo'; 
             }
             
             const isEnCurso = displayStatus === 'EnProceso' || displayStatus === 'Rechazado';
