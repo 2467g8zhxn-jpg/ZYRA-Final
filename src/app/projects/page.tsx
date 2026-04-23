@@ -500,8 +500,14 @@ export default function ProjectsPage() {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredProjects.map((project: any) => {
-            const isEnCurso = project.Estado === 'EnProceso' || project.Estado === 'Rechazado';
-            const displayStatus = project.Estado || 'Pendiente';
+            const projectReports = sqlReports.filter(r => r.ID_Proyecto === project.ID_Proyecto);
+            const hasPendingReport = projectReports.some(r => r.estado === 'Pendiente');
+            const hasRejectedReport = projectReports.some(r => r.estado === 'Rechazado');
+            
+            // Prioridad: Si hay reporte pendiente -> En Revisión. Si hay rechazado -> Corregir. Si no -> Estado del proyecto.
+            const displayStatus = hasPendingReport ? 'EnRevision' : (hasRejectedReport ? 'Rechazado' : (project.Estado || 'Pendiente'));
+            
+            const isEnCurso = displayStatus === 'EnProceso' || displayStatus === 'Rechazado';
             const assignedTeam = sqlTeams.find(t => t.ID_Equipo === project.ID_Equipo);
 
             return (
@@ -593,7 +599,15 @@ export default function ProjectsPage() {
                         setOpProjectMaterials(mats);
                       }
                     }}>
-                      <SheetTrigger asChild><Button className={cn("w-full h-10 rounded-none text-white", isEnCurso ? (project.Estado === 'Rechazado' ? "bg-red-500" : "bg-emerald-600") : "bg-accent")}>{project.Estado === 'Rechazado' ? "Corregir Reporte" : (isEnCurso ? "Reportar Avance" : "Iniciar Día")}</Button></SheetTrigger>
+                      <SheetTrigger asChild>
+                        <Button className={cn("w-full h-10 rounded-none text-white", 
+                          displayStatus === 'Rechazado' ? "bg-red-500" : 
+                          (displayStatus === 'EnProceso' ? "bg-emerald-600" : "bg-accent")
+                        )}>
+                          {displayStatus === 'Rechazado' ? "Corregir Reporte" : 
+                           (displayStatus === 'EnProceso' ? "Reportar Avance" : "Iniciar Día")}
+                        </Button>
+                      </SheetTrigger>
                       <SheetContent side="bottom" className="h-[90vh] overflow-y-auto w-full bg-card p-0">
                         <div className="max-w-xl mx-auto pb-10">
                           <SheetHeader className="p-6 border-b bg-muted/20"><SheetTitle>Reportar - {project.Nombre_Proyecto}</SheetTitle></SheetHeader>
