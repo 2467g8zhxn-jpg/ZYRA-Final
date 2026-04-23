@@ -110,16 +110,22 @@ router.post('/:id/puntos', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { puntos, motivo, projectId, reportId } = req.body;
-        
-        if (!puntos) return res.status(400).json({ error: 'Faltan puntos' });
+
+        console.log(`[PUNTOS] Recibido: id=${id}, puntos=${puntos}, motivo=${motivo}`);
+        console.log(`[PUNTOS] Body completo:`, JSON.stringify(req.body));
+
+        const ptsNum = parseInt(String(puntos));
+        if (!puntos || isNaN(ptsNum)) {
+            console.log(`[PUNTOS] ERROR: puntos inválidos: ${puntos}`);
+            return res.status(400).json({ error: 'Faltan puntos o son inválidos' });
+        }
 
         let empId: number | null = null;
-        
-        // Resolución de Identidad Flexible
+
         if (!isNaN(parseInt(id))) {
             empId = parseInt(id);
         } else {
-            // Si el ID no es numérico, buscar por nombre o username
+            console.log(`[PUNTOS] Buscando empleado por nombre/usuario: ${id}`);
             const foundEmp = await prisma.empleados.findFirst({
                 where: {
                     OR: [
@@ -132,16 +138,16 @@ router.post('/:id/puntos', async (req: Request, res: Response) => {
         }
 
         if (!empId) {
-            return res.status(404).json({ error: 'Empleado no encontrado para asignar puntos' });
+            console.log(`[PUNTOS] ERROR: No se encontró empleado con id=${id}`);
+            return res.status(404).json({ error: 'Empleado no encontrado' });
         }
 
-        const pts = parseInt(puntos);
-        if (isNaN(pts)) return res.status(400).json({ error: 'Cantidad de puntos inválida' });
+        console.log(`[PUNTOS] Guardando ${ptsNum} pts para empId=${empId}`);
 
         const history = await prisma.puntos_Historial.create({
             data: {
                 ID_Empleado: empId,
-                Cantidad_Puntos: pts,
+                Cantidad_Puntos: ptsNum,
                 Motivo: motivo || 'Acción',
                 ID_Proyecto: (projectId && !isNaN(parseInt(projectId))) ? parseInt(projectId) : null,
                 ID_Reporte: (reportId && !isNaN(parseInt(reportId))) ? parseInt(reportId) : null,
@@ -149,8 +155,12 @@ router.post('/:id/puntos', async (req: Request, res: Response) => {
             }
         });
 
+        console.log(`[PUNTOS] ✅ Guardado exitosamente: ID_Punto=${history.ID_Punto}`);
         res.status(201).json(history);
-    } catch (error) { errorHandler(error, req, res, () => { }); }
+    } catch (error) {
+        console.error('[PUNTOS] ❌ Error al guardar puntos:', error);
+        errorHandler(error, req, res, () => { });
+    }
 });
 
 export default router;
