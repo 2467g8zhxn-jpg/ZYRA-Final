@@ -149,7 +149,6 @@ model Checklist_Servicio_Detalle {
 model Checklist {
   ID_Checklist   Int                @id @default(autoincrement())
   ID_Proyecto    Int?
-  Fecha_Creacion DateTime           @default(now())
   Estado         String?            @db.VarChar(30)
   proyecto       Proyectos?         @relation(fields: [ID_Proyecto], references: [ID_Proyecto])
   detalles       Checklist_Detalle[]
@@ -163,7 +162,6 @@ model Checklist_Detalle {
   Cantidad_Requerida            Int?
   Cantidad_Cargada              Int?
   Marcado                       Boolean                     @default(false)
-  Fecha_Marcado                 DateTime?
   ID_Empleado                   Int?
   Observaciones                 String?
   checklist                     Checklist?                  @relation(fields: [ID_Checklist], references: [ID_Checklist])
@@ -177,7 +175,6 @@ model Puntos_Historial {
   ID_Empleado      Int?
   ID_Proyecto      Int?
   Cantidad_Puntos  Int?
-  Fecha_Asignacion DateTime   @default(now())
   Motivo           String?
   empleado         Empleados? @relation(fields: [ID_Empleado], references: [ID_Empleado])
   proyecto         Proyectos? @relation(fields: [ID_Proyecto], references: [ID_Proyecto])

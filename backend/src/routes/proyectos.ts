@@ -178,8 +178,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
               ID_Empleado: miembro.ID_Empleado,
               Cantidad_Puntos: 50,
               Motivo: `Proyecto Finalizado: ${proyectoConEquipo?.Nombre_Proyecto || ''}`,
-              ID_Proyecto: parseInt(req.params.id),
-              Fecha_Asignacion: new Date()
+              ID_Proyecto: parseInt(req.params.id)
             }
           });
           console.log(`[GAMIFICACION] 100 pts -> empleado ${miembro.ID_Empleado}`);
