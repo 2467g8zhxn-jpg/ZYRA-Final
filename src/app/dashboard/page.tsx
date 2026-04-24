@@ -282,23 +282,26 @@ function AdminDashboard({ proyectos, reportes, empleados, materiales }: any) {
           <CardContent className="space-y-3">
             {topEmployees.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">Sin datos aún</p>
-            ) : topEmployees.map((emp: any, i: number) => (
-              <div key={emp.id} className="flex items-center gap-3">
-                <div className={cn(
-                  "h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0",
-                  i === 0 ? "bg-amber-500/20 text-amber-400" :
-                    i === 1 ? "bg-slate-400/20 text-slate-300" :
-                      i === 2 ? "bg-orange-700/20 text-orange-500" : "bg-muted text-muted-foreground"
-                )}>{i + 1}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-foreground truncate">{emp.nombre || "—"}</p>
-                  <p className="text-[9px] text-muted-foreground">Nv. {emp.nivel || 1}</p>
+            ) : topEmployees.map((emp: any, i: number) => {
+              const currentLevel = calcLevel(emp.totalPuntos || 0);
+              return (
+                <div key={emp.ID_Empleado || i} className="flex items-center gap-3">
+                  <div className={cn(
+                    "h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0",
+                    i === 0 ? "bg-amber-500/20 text-amber-400" :
+                      i === 1 ? "bg-slate-400/20 text-slate-300" :
+                        i === 2 ? "bg-orange-700/20 text-orange-500" : "bg-muted text-muted-foreground"
+                  )}>{i + 1}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">{emp.Nombre || "—"}</p>
+                    <p className="text-[9px] text-muted-foreground">Nv. {currentLevel}</p>
+                  </div>
+                  <Badge variant="outline" className="text-[9px] font-black border-accent/30 text-accent shrink-0">
+                    {emp.totalPuntos || 0} pts
+                  </Badge>
                 </div>
-                <Badge variant="outline" className="text-[9px] font-black border-accent/30 text-accent shrink-0">
-                  {emp.totalPuntos || 0} pts
-                </Badge>
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
 
