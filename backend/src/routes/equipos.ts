@@ -36,8 +36,6 @@ router.post('/', async (req: Request, res: Response) => {
         const equipo = await prisma.equipos.create({
             data: { 
                 Nombre_Equipo,
-                // @ts-ignore
-                Tipo: tipoEquipo,
                 empleados: {
                     create: integrantes?.map((id: number) => ({
                         ID_Empleado: id,
@@ -79,9 +77,7 @@ router.put('/:id', async (req: Request, res: Response) => {
             return await tx.equipos.update({
                 where: { ID_Equipo: equipoId },
                 data: { 
-                    ...(Nombre_Equipo && { Nombre_Equipo }),
-                    // @ts-ignore
-                    ...(tipoEquipo !== undefined && { Tipo: tipoEquipo })
+                    ...(Nombre_Equipo && { Nombre_Equipo })
                 },
                 include: { empleados: { include: { empleado: true } } }
             });

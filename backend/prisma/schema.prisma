@@ -51,7 +51,6 @@ model Usuarios {
 model Equipos {
   ID_Equipo     Int               @id @default(autoincrement())
   Nombre_Equipo String?           @db.VarChar(100)
-  Tipo          String?           @db.VarChar(50)
   empleados     Empleado_Equipo[]
   proyectos     Proyectos[]
   reportes      Reportes[]

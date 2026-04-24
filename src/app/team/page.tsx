@@ -73,14 +73,12 @@ export default function TeamPage() {
   const [newTeam, setNewTeam] = useState({
     Nombre_Equipo: "",
     integrantes: [] as number[],
-    Tipo: "Instalación",
     ID_Lider: null as number | null,
   });
 
   const [editTeamData, setEditTeamData] = useState<any>({
     Nombre_Equipo: "",
     integrantes: [],
-    Tipo: "Instalación",
     ID_Lider: null
   });
 
@@ -129,7 +127,6 @@ export default function TeamPage() {
       await equiposAPI.create({
         Nombre_Equipo: newTeam.Nombre_Equipo,
         integrantes: newTeam.integrantes,
-        Tipo: newTeam.Tipo,
         ID_Lider: newTeam.ID_Lider
       });
       toast({ title: t.common.success, description: "Equipo creado correctamente" });
@@ -150,7 +147,6 @@ export default function TeamPage() {
       await equiposAPI.update(selectedTeam.ID_Equipo, {
         Nombre_Equipo: editTeamData.Nombre_Equipo,
         integrantes: editTeamData.integrantes,
-        Tipo: editTeamData.Tipo,
         ID_Lider: editTeamData.ID_Lider
       });
       toast({ title: t.common.success });
@@ -252,21 +248,6 @@ export default function TeamPage() {
                         />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest pl-1">Tipo de Equipo</Label>
-                        <Select 
-                          value={newTeam.Tipo} 
-                          onValueChange={(val) => setNewTeam({ ...newTeam, Tipo: val })}
-                        >
-                          <SelectTrigger className="bg-white/5 border-white/5 h-12 rounded-xl">
-                            <SelectValue placeholder="Seleccionar tipo" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover border-border text-popover-foreground">
-                            <SelectItem value="Instalación">Instalación</SelectItem>
-                            <SelectItem value="Mantenimiento">Mantenimiento</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
 
                       <div className="space-y-2">
                         <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest pl-1">Líder del Equipo</Label>
@@ -360,9 +341,6 @@ export default function TeamPage() {
                   </div>
                   
                   <div className="mt-4">
-                    <p className="text-[10px] font-black text-accent uppercase tracking-[0.2em] mb-1">
-                      {team.Tipo || "SIN TIPO"}
-                    </p>
                     <h3 className="text-xl font-bold text-foreground mb-2">
                       {team.Nombre_Equipo}
                     </h3>
@@ -413,7 +391,6 @@ export default function TeamPage() {
                         setSelectedTeam(team);
                         setEditTeamData({
                           Nombre_Equipo: team.Nombre_Equipo,
-                          Tipo: team.Tipo || "Instalación",
                           ID_Lider: team.empleados?.find((r: any) => r.Cargo === 'Líder')?.ID_Empleado || null,
                           integrantes: team.empleados?.map((r: any) => r.ID_Empleado) || []
                         });
@@ -488,21 +465,6 @@ export default function TeamPage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest pl-1">Tipo de Equipo</Label>
-                    <Select 
-                      value={editTeamData?.Tipo} 
-                      onValueChange={(val) => setEditTeamData({ ...editTeamData, Tipo: val })}
-                    >
-                      <SelectTrigger className="bg-white/5 border-white/5 h-12 rounded-xl">
-                        <SelectValue placeholder="Seleccionar tipo" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-border text-popover-foreground">
-                        <SelectItem value="Instalación">Instalación</SelectItem>
-                        <SelectItem value="Mantenimiento">Mantenimiento</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
 
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest pl-1">Líder del Equipo</Label>
