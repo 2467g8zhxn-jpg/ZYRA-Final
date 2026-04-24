@@ -327,7 +327,8 @@ export default function ProjectsPage() {
       await projectsAPI.update(project.ID_Proyecto.toString(), {
         Estado: "EnProceso",
         stockDescontado: true,
-        stockDescontadoAt: new Date().toISOString()
+        stockDescontadoAt: new Date().toISOString(),
+        projectMaterials: materialsToDeduct
       });
 
       toast({ title: t.projects.day_started });
