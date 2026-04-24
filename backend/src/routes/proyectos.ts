@@ -138,7 +138,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
     // Soporte para el campo 'projectMaterials' que envía el frontend
     const { projectMaterials } = req.body;
     if (projectMaterials && projectMaterials.length > 0) {
-       const existingChecklist = await prisma.checklist.findFirst({
+      const existingChecklist = await prisma.checklist.findFirst({
         where: { ID_Proyecto: proyecto.ID_Proyecto }
       });
 
@@ -155,6 +155,22 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
             Cantidad_Cargada: m.takenQuantity || m.Cantidad_Cargada || 0,
             Marcado: m.done || m.Marcado || false
           }))
+        });
+      } else {
+        // CREAR SI NO EXISTE
+        await prisma.checklist.create({
+          data: {
+            ID_Proyecto: proyecto.ID_Proyecto,
+            Estado: 'Pendiente',
+            detalles: {
+              create: projectMaterials.map((m: any) => ({
+                ID_Material: m.ID_Material,
+                Cantidad_Requerida: m.quantity || m.Cantidad_Requerida,
+                Cantidad_Cargada: m.takenQuantity || 0,
+                Marcado: m.done || false
+              }))
+            }
+          }
         });
       }
     }
