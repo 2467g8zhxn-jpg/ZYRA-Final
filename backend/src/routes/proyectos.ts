@@ -213,15 +213,27 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const projectId = parseInt(req.params.id);
     
-    // 1. Borrar puntos asociados en Puntos_Historial
-    await prisma.puntos_Historial.deleteMany({
-      where: { ID_Proyecto: projectId }
-    }).catch(() => {});
-
-    // 2. Borrar el proyecto
-    await prisma.proyectos.delete({ where: { ID_Proyecto: projectId } });
+    // 1. Borrar detalles de checklists
+    const checklists = await prisma.checklist.findMany({ where: { ID_Proyecto: projectId } });
+    for (const cl of checklists) {
+      await prisma.checklist_Detalle.deleteMany({ where: { ID_Checklist: cl.ID_Checklist } });
+    }
     
-    res.json({ message: 'Proyecto eliminado y puntos limpiados' });
+    // 2. Borrar checklists
+    await prisma.checklist.deleteMany({ where: { ID_Proyecto: projectId } });
+    
+    // 3. Borrar reportes
+    await prisma.reportes.deleteMany({ where: { ID_Proyecto: projectId } });
+    
+    // 4. Borrar historial de puntos
+    await prisma.puntos_Historial.deleteMany({ where: { ID_Proyecto: projectId } });
+
+    // 5. Finalmente borrar el proyecto
+    await prisma.proyectos.delete({
+      where: { ID_Proyecto: projectId }
+    });
+    
+    res.json({ message: 'Proyecto y datos relacionados eliminados' });
   } catch (error) { errorHandler(error, req, res, () => { }); }
 });
 
