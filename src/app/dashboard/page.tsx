@@ -132,6 +132,10 @@ function AdminDashboard({ proyectos, reportes, empleados, materiales }: any) {
   // Top employees by points
   const topEmployees = useMemo(() =>
     [...(empleados || [])]
+      .filter(e => 
+        !e.Nombre?.toLowerCase().includes('admin') && 
+        e.usuario?.rol?.Nombre_Rol !== 'admin'
+      )
       .map(e => ({ ...e, totalPuntos: Array.isArray(e.puntos) ? e.puntos.reduce((s: number, p: any) => s + (p.Cantidad_Puntos || 0), 0) : 0 }))
       .sort((a: any, b: any) => b.totalPuntos - a.totalPuntos)
       .slice(0, 5),
